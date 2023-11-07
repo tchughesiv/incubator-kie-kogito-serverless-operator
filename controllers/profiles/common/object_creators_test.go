@@ -34,7 +34,7 @@ import (
 func Test_ensureWorkflowPropertiesConfigMapMutator(t *testing.T) {
 	workflow := test.GetBaseSonataFlowWithDevProfile(t.Name())
 	// can't be new
-	cm, _ := WorkflowPropsConfigMapCreator(workflow)
+	cm, _ := WorkflowPropsConfigMapCreator(workflow, nil)
 	cm.SetUID("1")
 	cm.SetResourceVersion("1")
 	reflectCm := cm.(*corev1.ConfigMap)
@@ -117,7 +117,7 @@ func TestMergePodSpec(t *testing.T) {
 		},
 	}
 
-	object, err := DeploymentCreator(workflow)
+	object, err := DeploymentCreator(workflow, nil)
 	assert.NoError(t, err)
 
 	deployment := object.(*appsv1.Deployment)
@@ -152,7 +152,7 @@ func TestMergePodSpec_OverrideContainers(t *testing.T) {
 		},
 	}
 
-	object, err := DeploymentCreator(workflow)
+	object, err := DeploymentCreator(workflow, nil)
 	assert.NoError(t, err)
 
 	deployment := object.(*appsv1.Deployment)

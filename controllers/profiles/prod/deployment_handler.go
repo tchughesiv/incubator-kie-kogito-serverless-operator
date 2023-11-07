@@ -48,7 +48,7 @@ func (d *deploymentHandler) handle(ctx context.Context, workflow *operatorapi.So
 
 func (d *deploymentHandler) handleWithImage(ctx context.Context, workflow *operatorapi.SonataFlow, image string) (reconcile.Result, []client.Object, error) {
 	pl, _ := platform.GetActivePlatform(ctx, d.C, workflow.Namespace)
-	propsCM, _, err := d.ensurers.propertiesConfigMap.Ensure(ctx, workflow, common.WorkflowPropertiesMutateVisitor(ctx, d.StateSupport.Catalog, workflow, pl))
+	propsCM, _, err := d.ensurers.propertiesConfigMap.Ensure(ctx, workflow, pl, common.WorkflowPropertiesMutateVisitor(ctx, d.StateSupport.Catalog, workflow, pl))
 	if err != nil {
 		workflow.Status.Manager().MarkFalse(api.RunningConditionType, api.ExternalResourcesNotFoundReason, "Unable to retrieve the properties config map")
 		_, err = d.PerformStatusUpdate(ctx, workflow)
@@ -59,6 +59,7 @@ func (d *deploymentHandler) handleWithImage(ctx context.Context, workflow *opera
 		d.ensurers.deployment.Ensure(
 			ctx,
 			workflow,
+			pl,
 			d.getDeploymentMutateVisitors(workflow, image, propsCM.(*v1.ConfigMap))...,
 		)
 	if err != nil {
@@ -67,7 +68,7 @@ func (d *deploymentHandler) handleWithImage(ctx context.Context, workflow *opera
 		return reconcile.Result{}, nil, err
 	}
 
-	service, _, err := d.ensurers.service.Ensure(ctx, workflow, common.ServiceMutateVisitor(workflow))
+	service, _, err := d.ensurers.service.Ensure(ctx, workflow, nil, common.ServiceMutateVisitor(workflow))
 	if err != nil {
 		workflow.Status.Manager().MarkFalse(api.RunningConditionType, api.DeploymentUnavailableReason, "Unable to make the service available due to ", err)
 		_, err = d.PerformStatusUpdate(ctx, workflow)

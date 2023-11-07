@@ -82,19 +82,26 @@ func createDataIndexComponents(ctx context.Context, client client.Client, platfo
 }
 
 func createDataIndexDeployment(ctx context.Context, client client.Client, platform *operatorapi.SonataFlowPlatform) error {
+	startupProbe := &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: common.QuarkusHealthPathStarted,
+				Port: common.DefaultHTTPWorkflowPortIntStr,
+			},
+		},
+		InitialDelaySeconds: common.HealthStartedInitialDelaySeconds,
+		TimeoutSeconds:      common.HealthTimeoutSeconds,
+		FailureThreshold:    common.HealthStartedFailureThreshold,
+		PeriodSeconds:       common.HealthStartedPeriodSeconds,
+	}
 	readyProbe := &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
-				Path:   common.QuarkusHealthPathReady,
-				Port:   common.DefaultHTTPWorkflowPortIntStr,
-				Scheme: corev1.URISchemeHTTP,
+				Path: common.QuarkusHealthPathReady,
+				Port: common.DefaultHTTPWorkflowPortIntStr,
 			},
 		},
-		InitialDelaySeconds: int32(45),
-		TimeoutSeconds:      int32(10),
-		PeriodSeconds:       int32(30),
-		SuccessThreshold:    int32(1),
-		FailureThreshold:    int32(4),
+		TimeoutSeconds: common.HealthTimeoutSeconds,
 	}
 	liveProbe := readyProbe.DeepCopy()
 	liveProbe.ProbeHandler.HTTPGet.Path = common.QuarkusHealthPathLive
@@ -120,13 +127,13 @@ func createDataIndexDeployment(ctx context.Context, client client.Client, platfo
 				corev1.ResourceMemory: resource.MustParse("256Mi"),
 			},
 		},
+		StartupProbe:   startupProbe,
 		ReadinessProbe: readyProbe,
 		LivenessProbe:  liveProbe,
 		Ports: []corev1.ContainerPort{
 			{
 				Name:          utils.HttpScheme,
 				ContainerPort: int32(common.DefaultHTTPWorkflowPortInt),
-				Protocol:      corev1.ProtocolTCP,
 			},
 		},
 		ImagePullPolicy: corev1.PullAlways,
@@ -239,11 +246,11 @@ func configurePostgreSqlEnv(postgresql *operatorapi.PersistencePostgreSql, datab
 	secretRef := corev1.LocalObjectReference{
 		Name: postgresql.SecretRef.Name,
 	}
-	quarkusDatasourceUsername := "POSTGRESQL_USER"
+	quarkusDatasourceUsername := "PGUSER"
 	if len(postgresql.SecretRef.UserKey) > 0 {
 		quarkusDatasourceUsername = postgresql.SecretRef.UserKey
 	}
-	quarkusDatasourcePassword := "POSTGRESQL_PASSWORD"
+	quarkusDatasourcePassword := "PGPASSWORD"
 	if len(postgresql.SecretRef.PasswordKey) > 0 {
 		quarkusDatasourcePassword = postgresql.SecretRef.PasswordKey
 	}

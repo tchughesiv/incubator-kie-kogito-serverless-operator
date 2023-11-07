@@ -29,7 +29,7 @@ var _ ObjectEnsurer = &defaultObjectEnsurer{}
 var _ ObjectEnsurer = &noopObjectEnsurer{}
 
 type ObjectEnsurer interface {
-	Ensure(ctx context.Context, workflow *operatorapi.SonataFlow, visitors ...MutateVisitor) (client.Object, controllerutil.OperationResult, error)
+	Ensure(ctx context.Context, workflow *operatorapi.SonataFlow, platform *operatorapi.SonataFlowPlatform, visitors ...MutateVisitor) (client.Object, controllerutil.OperationResult, error)
 }
 
 // MutateVisitor is a visitor function that mutates the given object before performing any updates in the cluster.
@@ -57,10 +57,10 @@ type defaultObjectEnsurer struct {
 	creator ObjectCreator
 }
 
-func (d *defaultObjectEnsurer) Ensure(ctx context.Context, workflow *operatorapi.SonataFlow, visitors ...MutateVisitor) (client.Object, controllerutil.OperationResult, error) {
+func (d *defaultObjectEnsurer) Ensure(ctx context.Context, workflow *operatorapi.SonataFlow, platform *operatorapi.SonataFlowPlatform, visitors ...MutateVisitor) (client.Object, controllerutil.OperationResult, error) {
 	result := controllerutil.OperationResultNone
 
-	object, err := d.creator(workflow)
+	object, err := d.creator(workflow, platform)
 	if err != nil {
 		return nil, result, err
 	}
@@ -88,7 +88,7 @@ func NewNoopObjectEnsurer() ObjectEnsurer {
 type noopObjectEnsurer struct {
 }
 
-func (d *noopObjectEnsurer) Ensure(ctx context.Context, workflow *operatorapi.SonataFlow, visitors ...MutateVisitor) (client.Object, controllerutil.OperationResult, error) {
+func (d *noopObjectEnsurer) Ensure(ctx context.Context, workflow *operatorapi.SonataFlow, platform *operatorapi.SonataFlowPlatform, visitors ...MutateVisitor) (client.Object, controllerutil.OperationResult, error) {
 	result := controllerutil.OperationResultNone
 	return nil, result, nil
 }
