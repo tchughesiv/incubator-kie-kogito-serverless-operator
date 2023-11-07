@@ -31,7 +31,7 @@ import (
 
 // ObjectCreator is the func that creates the initial reference object, if the object doesn't exist in the cluster, this one is created.
 // Can be used as a reference to keep the object immutable
-type ObjectCreator func(workflow *operatorapi.SonataFlow) (client.Object, error)
+type ObjectCreator func(workflow *operatorapi.SonataFlow, platform *operatorapi.SonataFlowPlatform) (client.Object, error)
 
 const (
 	DefaultHTTPWorkflowPortInt = 8080
@@ -40,24 +40,24 @@ const (
 	// Quarkus Health Check Probe configuration.
 	// See: https://quarkus.io/guides/smallrye-health#running-the-health-check
 
-	quarkusHealthPathStarted = "/q/health/started"
+	QuarkusHealthPathStarted = "/q/health/started"
 	QuarkusHealthPathReady   = "/q/health/ready"
 	QuarkusHealthPathLive    = "/q/health/live"
 
 	// Default deployment health check configuration
 	// See: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
 
-	healthTimeoutSeconds             = 3
-	healthStartedFailureThreshold    = 5
-	healthStartedPeriodSeconds       = 15
-	healthStartedInitialDelaySeconds = 10
+	HealthTimeoutSeconds             = 3
+	HealthStartedFailureThreshold    = 5
+	HealthStartedPeriodSeconds       = 15
+	HealthStartedInitialDelaySeconds = 10
 )
 
 var DefaultHTTPWorkflowPortIntStr = intstr.FromInt(DefaultHTTPWorkflowPortInt)
 
 // DeploymentCreator is an objectCreator for a base Kubernetes Deployments for profiles that need to deploy the workflow on a vanilla deployment.
 // It serves as a basis for a basic Quarkus Java application, expected to listen on http 8080.
-func DeploymentCreator(workflow *operatorapi.SonataFlow) (client.Object, error) {
+func DeploymentCreator(workflow *operatorapi.SonataFlow, platform *operatorapi.SonataFlowPlatform) (client.Object, error) {
 	lbl := workflowproj.GetDefaultLabels(workflow)
 
 	deployment := &appsv1.Deployment{
@@ -118,7 +118,7 @@ func defaultContainer(workflow *operatorapi.SonataFlow) (*corev1.Container, erro
 					Port: DefaultHTTPWorkflowPortIntStr,
 				},
 			},
-			TimeoutSeconds: healthTimeoutSeconds,
+			TimeoutSeconds: HealthTimeoutSeconds,
 		},
 		ReadinessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
@@ -127,19 +127,19 @@ func defaultContainer(workflow *operatorapi.SonataFlow) (*corev1.Container, erro
 					Port: DefaultHTTPWorkflowPortIntStr,
 				},
 			},
-			TimeoutSeconds: healthTimeoutSeconds,
+			TimeoutSeconds: HealthTimeoutSeconds,
 		},
 		StartupProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
-					Path: quarkusHealthPathStarted,
+					Path: QuarkusHealthPathStarted,
 					Port: DefaultHTTPWorkflowPortIntStr,
 				},
 			},
-			InitialDelaySeconds: healthStartedInitialDelaySeconds,
-			TimeoutSeconds:      healthTimeoutSeconds,
-			FailureThreshold:    healthStartedFailureThreshold,
-			PeriodSeconds:       healthStartedPeriodSeconds,
+			InitialDelaySeconds: HealthStartedInitialDelaySeconds,
+			TimeoutSeconds:      HealthTimeoutSeconds,
+			FailureThreshold:    HealthStartedFailureThreshold,
+			PeriodSeconds:       HealthStartedPeriodSeconds,
 		},
 		ImagePullPolicy: corev1.PullAlways,
 		SecurityContext: kubeutil.SecurityDefaults(),
@@ -169,7 +169,7 @@ func defaultContainer(workflow *operatorapi.SonataFlow) (*corev1.Container, erro
 
 // ServiceCreator is an objectCreator for a basic Service aiming a vanilla Kubernetes Deployment.
 // It maps the default HTTP port (80) to the target Java application webserver on port 8080.
-func ServiceCreator(workflow *operatorapi.SonataFlow) (client.Object, error) {
+func ServiceCreator(workflow *operatorapi.SonataFlow, platform *operatorapi.SonataFlowPlatform) (client.Object, error) {
 	lbl := workflowproj.GetDefaultLabels(workflow)
 
 	service := &corev1.Service{
@@ -194,12 +194,12 @@ func ServiceCreator(workflow *operatorapi.SonataFlow) (client.Object, error) {
 // OpenShiftRouteCreator is an ObjectCreator for a basic Route for a workflow running on OpenShift.
 // It enables the exposition of the service using an OpenShift Route.
 // See: https://github.com/openshift/api/blob/d170fcdc0fa638b664e4f35f2daf753cb4afe36b/route/v1/route.crd.yaml
-func OpenShiftRouteCreator(workflow *operatorapi.SonataFlow) (client.Object, error) {
+func OpenShiftRouteCreator(workflow *operatorapi.SonataFlow, platform *operatorapi.SonataFlowPlatform) (client.Object, error) {
 	route, err := openshift.RouteForWorkflow(workflow)
 	return route, err
 }
 
 // WorkflowPropsConfigMapCreator creates a ConfigMap to hold the external application properties
-func WorkflowPropsConfigMapCreator(workflow *operatorapi.SonataFlow) (client.Object, error) {
-	return workflowproj.CreateNewAppPropsConfigMap(workflow, ImmutableApplicationProperties(workflow, nil)), nil
+func WorkflowPropsConfigMapCreator(workflow *operatorapi.SonataFlow, platform *operatorapi.SonataFlowPlatform) (client.Object, error) {
+	return workflowproj.CreateNewAppPropsConfigMap(workflow, ImmutableApplicationProperties(workflow, platform)), nil
 }

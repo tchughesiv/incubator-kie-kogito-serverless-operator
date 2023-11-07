@@ -56,7 +56,7 @@ func (e *ensureRunningWorkflowState) CanReconcile(workflow *operatorapi.SonataFl
 func (e *ensureRunningWorkflowState) Do(ctx context.Context, workflow *operatorapi.SonataFlow) (ctrl.Result, []client.Object, error) {
 	var objs []client.Object
 
-	flowDefCM, _, err := e.ensurers.definitionConfigMap.Ensure(ctx, workflow, ensureWorkflowDefConfigMapMutator(workflow))
+	flowDefCM, _, err := e.ensurers.definitionConfigMap.Ensure(ctx, workflow, nil, ensureWorkflowDefConfigMapMutator(workflow))
 	if err != nil {
 		return ctrl.Result{Requeue: false}, objs, err
 	}
@@ -68,7 +68,7 @@ func (e *ensureRunningWorkflowState) Do(ctx context.Context, workflow *operatora
 	if err == nil && len(pl.Spec.DevMode.BaseImage) > 0 {
 		devBaseContainerImage = pl.Spec.DevMode.BaseImage
 	}
-	propsCM, _, err := e.ensurers.propertiesConfigMap.Ensure(ctx, workflow, common.WorkflowPropertiesMutateVisitor(workflow, pl))
+	propsCM, _, err := e.ensurers.propertiesConfigMap.Ensure(ctx, workflow, nil, common.WorkflowPropertiesMutateVisitor(workflow, pl))
 	if err != nil {
 		return ctrl.Result{Requeue: false}, objs, err
 	}
@@ -83,7 +83,7 @@ func (e *ensureRunningWorkflowState) Do(ctx context.Context, workflow *operatora
 		return ctrl.Result{RequeueAfter: common.RequeueAfterFailure}, objs, nil
 	}
 
-	deployment, _, err := e.ensurers.deployment.Ensure(ctx, workflow,
+	deployment, _, err := e.ensurers.deployment.Ensure(ctx, workflow, nil,
 		deploymentMutateVisitor(workflow),
 		common.ImageDeploymentMutateVisitor(workflow, devBaseContainerImage),
 		mountDevConfigMapsMutateVisitor(flowDefCM.(*corev1.ConfigMap), propsCM.(*corev1.ConfigMap), externalCM))
@@ -92,13 +92,13 @@ func (e *ensureRunningWorkflowState) Do(ctx context.Context, workflow *operatora
 	}
 	objs = append(objs, deployment)
 
-	service, _, err := e.ensurers.service.Ensure(ctx, workflow, common.ServiceMutateVisitor(workflow))
+	service, _, err := e.ensurers.service.Ensure(ctx, workflow, nil, common.ServiceMutateVisitor(workflow))
 	if err != nil {
 		return ctrl.Result{RequeueAfter: common.RequeueAfterFailure}, objs, err
 	}
 	objs = append(objs, service)
 
-	route, _, err := e.ensurers.network.Ensure(ctx, workflow)
+	route, _, err := e.ensurers.network.Ensure(ctx, workflow, nil)
 	if err != nil {
 		return ctrl.Result{RequeueAfter: common.RequeueAfterFailure}, objs, err
 	}

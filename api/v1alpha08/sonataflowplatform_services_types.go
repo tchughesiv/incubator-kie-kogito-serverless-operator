@@ -62,10 +62,10 @@ type PersistencePostgreSql struct {
 type PostgreSqlSecretOptions struct {
 	// Name of the postgresql credentials secret.
 	Name string `json:"name"`
-	// Defaults to POSTGRESQL_USER
+	// Defaults to PGUSER
 	// +optional
 	UserKey string `json:"userKey,omitempty"`
-	// Defaults to POSTGRESQL_PASSWORD
+	// Defaults to PGPASSWORD
 	// +optional
 	PasswordKey string `json:"passwordKey,omitempty"`
 }

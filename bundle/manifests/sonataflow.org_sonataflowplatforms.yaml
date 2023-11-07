@@ -458,10 +458,10 @@ spec:
                                       secret.
                                     type: string
                                   passwordKey:
-                                    description: Defaults to POSTGRESQL_PASSWORD
+                                    description: Defaults to PGPASSWORD
                                     type: string
                                   userKey:
-                                    description: Defaults to POSTGRESQL_USER
+                                    description: Defaults to PGUSER
                                     type: string
                                 required:
                                 - name

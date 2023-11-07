@@ -39,8 +39,8 @@ const (
 // aiming a vanilla Kubernetes Deployment.
 // It maps the default HTTP port (80) to the target Java application webserver on port 8080.
 // It configures the Service as a NodePort type service, in this way it will be easier for a developer access the service
-func serviceCreator(workflow *operatorapi.SonataFlow) (client.Object, error) {
-	object, _ := common.ServiceCreator(workflow)
+func serviceCreator(workflow *operatorapi.SonataFlow, platform *operatorapi.SonataFlowPlatform) (client.Object, error) {
+	object, _ := common.ServiceCreator(workflow, nil)
 	service := object.(*corev1.Service)
 	// Let's double-check that the workflow is using the Dev Profile we would like to expose it via NodePort
 	if profiles.IsDevProfile(workflow) {
@@ -49,8 +49,8 @@ func serviceCreator(workflow *operatorapi.SonataFlow) (client.Object, error) {
 	return service, nil
 }
 
-func deploymentCreator(workflow *operatorapi.SonataFlow) (client.Object, error) {
-	obj, err := common.DeploymentCreator(workflow)
+func deploymentCreator(workflow *operatorapi.SonataFlow, platform *operatorapi.SonataFlowPlatform) (client.Object, error) {
+	obj, err := common.DeploymentCreator(workflow, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func deploymentCreator(workflow *operatorapi.SonataFlow) (client.Object, error) 
 }
 
 // workflowDefConfigMapCreator creates a new ConfigMap that holds the definition of a workflow specification.
-func workflowDefConfigMapCreator(workflow *operatorapi.SonataFlow) (client.Object, error) {
+func workflowDefConfigMapCreator(workflow *operatorapi.SonataFlow, platform *operatorapi.SonataFlowPlatform) (client.Object, error) {
 	configMap, err := workflowdef.CreateNewConfigMap(workflow)
 	if err != nil {
 		return nil, err
@@ -85,7 +85,7 @@ func deploymentMutateVisitor(workflow *operatorapi.SonataFlow) common.MutateVisi
 			if kubeutil.IsObjectNew(object) {
 				return nil
 			}
-			original, err := deploymentCreator(workflow)
+			original, err := deploymentCreator(workflow, nil)
 			if err != nil {
 				return err
 			}
@@ -101,7 +101,7 @@ func ensureWorkflowDefConfigMapMutator(workflow *operatorapi.SonataFlow) common.
 			if kubeutil.IsObjectNew(object) {
 				return nil
 			}
-			original, err := workflowDefConfigMapCreator(workflow)
+			original, err := workflowDefConfigMapCreator(workflow, nil)
 			if err != nil {
 				return err
 			}
