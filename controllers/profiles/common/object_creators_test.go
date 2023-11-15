@@ -15,6 +15,7 @@
 package common
 
 import (
+	"context"
 	"testing"
 
 	"github.com/magiconair/properties"
@@ -34,12 +35,12 @@ import (
 func Test_ensureWorkflowPropertiesConfigMapMutator(t *testing.T) {
 	workflow := test.GetBaseSonataFlowWithDevProfile(t.Name())
 	// can't be new
-	cm, _ := WorkflowPropsConfigMapCreator(workflow, nil)
+	cm, _ := WorkflowPropsConfigMapCreator(workflow)
 	cm.SetUID("1")
 	cm.SetResourceVersion("1")
 	reflectCm := cm.(*corev1.ConfigMap)
 
-	visitor := WorkflowPropertiesMutateVisitor(nil, nil, workflow, nil)
+	visitor := WorkflowPropertiesMutateVisitor(context.TODO(), nil, workflow, nil)
 	mutateFn := visitor(cm)
 
 	assert.NoError(t, mutateFn())
@@ -72,7 +73,7 @@ func Test_ensureWorkflowPropertiesConfigMapMutator_DollarReplacement(t *testing.
 			workflowproj.ApplicationPropertiesFileName: "mp.messaging.outgoing.kogito_outgoing_stream.url=${kubernetes:services.v1/event-listener}",
 		},
 	}
-	mutateVisitorFn := WorkflowPropertiesMutateVisitor(nil, nil, workflow, nil)
+	mutateVisitorFn := WorkflowPropertiesMutateVisitor(context.TODO(), nil, workflow, nil)
 
 	err := mutateVisitorFn(existingCM)()
 	assert.NoError(t, err)
@@ -117,7 +118,7 @@ func TestMergePodSpec(t *testing.T) {
 		},
 	}
 
-	object, err := DeploymentCreator(workflow, nil)
+	object, err := DeploymentCreator(workflow)
 	assert.NoError(t, err)
 
 	deployment := object.(*appsv1.Deployment)
@@ -152,7 +153,7 @@ func TestMergePodSpec_OverrideContainers(t *testing.T) {
 		},
 	}
 
-	object, err := DeploymentCreator(workflow, nil)
+	object, err := DeploymentCreator(workflow)
 	assert.NoError(t, err)
 
 	deployment := object.(*appsv1.Deployment)

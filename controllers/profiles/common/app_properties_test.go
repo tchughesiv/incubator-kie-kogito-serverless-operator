@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"testing"
 
-	operatorapi "github.com/apache/incubator-kie-kogito-serverless-operator/api/v1alpha08"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/apache/incubator-kie-kogito-serverless-operator/controllers/discovery"
@@ -192,7 +191,7 @@ func Test_generateDiscoveryProperties(t *testing.T) {
 	propertiesContent = propertiesContent + "non_service4=${kubernetes:--kaka}"
 
 	props := properties.MustLoadString(propertiesContent)
-	result := generateDiscoveryProperties(context.TODO(), catalogService, props, &operatorapi.SonataFlow{
+	result := generateDiscoveryProperties(context.TODO(), catalogService, props, &v1alpha08.SonataFlow{
 		ObjectMeta: metav1.ObjectMeta{Name: "helloworld", Namespace: defaultNamespace},
 	})
 
