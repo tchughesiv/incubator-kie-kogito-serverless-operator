@@ -8310,6 +8310,33 @@ spec:
                 - kubernetes
                 - openshift
                 type: string
+              clusterPlatformRef:
+                description: SonataFlowClusterPlatformRef defines the observed state
+                  of SonataFlowPlatform
+                properties:
+                  name:
+                    type: string
+                  platformRef:
+                    description: SonataFlowPlatformRef defines the desired state of
+                      SonataFlowClusterPlatform
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                    required:
+                    - name
+                    - namespace
+                    type: object
+                  services:
+                    description: PlatformServices defines the observed state of SonataFlowPlatform
+                    properties:
+                      dataIndexRef:
+                        type: string
+                      jobServiceRef:
+                        type: string
+                    type: object
+                type: object
               conditions:
                 description: The latest available observations of a resource's current
                   state.

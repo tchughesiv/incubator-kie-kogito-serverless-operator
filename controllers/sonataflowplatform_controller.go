@@ -31,18 +31,21 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/apache/incubator-kie-kogito-serverless-operator/api"
 
 	clientr "github.com/apache/incubator-kie-kogito-serverless-operator/container-builder/client"
 
+	"github.com/apache/incubator-kie-kogito-serverless-operator/controllers/clusterplatform"
 	"github.com/apache/incubator-kie-kogito-serverless-operator/controllers/platform"
 
 	ctrlrun "sigs.k8s.io/controller-runtime"
 	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorapi "github.com/apache/incubator-kie-kogito-serverless-operator/api/v1alpha08"
+	sonataflowv1alpha08 "github.com/apache/incubator-kie-kogito-serverless-operator/api/v1alpha08"
 	"github.com/apache/incubator-kie-kogito-serverless-operator/log"
 )
 
@@ -71,6 +74,23 @@ type SonataFlowPlatformReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.1/pkg/reconcile
 func (r *SonataFlowPlatformReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+
+	// Fetch the SonataFlowClusterPlatform instance
+	cPlatform, err := clusterplatform.GetActiveClusterPlatform(ctx, r.Client)
+	if err != nil && !errors.IsNotFound(err) {
+		klog.V(log.E).ErrorS(err, "Failed to get active SonataFlowClusterPlatform")
+		return reconcile.Result{}, err
+	}
+
+	// if cluster platform (or it's referenced sonataflowplatform) changed, requeue all SonataFlowPlatforms in the cluster... except for the referenced one
+	if len(req.Namespace) == 0 {
+		if cPlatform != nil && cPlatform.Name == req.Name {
+			//platformRef := cPlatform.Spec.PlatformRef
+		}
+		// queue all platforms in the cluster?
+		//return reconcile.Result{}, nil
+	}
+
 	// Make sure the operator is allowed to act on namespace
 	if ok, err := platform.IsOperatorAllowedOnNamespace(ctx, r.Reader, req.Namespace); err != nil {
 		return reconcile.Result{}, err
@@ -82,7 +102,7 @@ func (r *SonataFlowPlatformReconciler) Reconcile(ctx context.Context, req reconc
 	// Fetch the Platform instance
 	var instance operatorapi.SonataFlowPlatform
 
-	if err := r.Reader.Get(ctx, req.NamespacedName, &instance); err != nil {
+	if err = r.Reader.Get(ctx, req.NamespacedName, &instance); err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup
@@ -109,8 +129,6 @@ func (r *SonataFlowPlatformReconciler) Reconcile(ctx context.Context, req reconc
 		platform.NewCreateAction(),
 		platform.NewMonitorAction(),
 	}
-
-	var err error
 
 	target := instance.DeepCopy()
 
@@ -171,5 +189,6 @@ func (r *SonataFlowPlatformReconciler) SetupWithManager(mgr ctrlrun.Manager) err
 		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.Service{}).
 		Owns(&corev1.ConfigMap{}).
+		Watches(&sonataflowv1alpha08.SonataFlowClusterPlatform{}, &handler.EnqueueRequestForObject{}).
 		Complete(r)
 }

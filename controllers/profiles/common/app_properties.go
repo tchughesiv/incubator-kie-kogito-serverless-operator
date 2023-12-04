@@ -179,7 +179,7 @@ func (a *appPropertyHandler) addDefaultMutableProperty(name string, value string
 }
 
 func dataIndexEnabled(platform *operatorapi.SonataFlowPlatform) bool {
-	return platform != nil && platform.Spec.Services.DataIndex != nil &&
+	return platform != nil && platform.Spec.Services != nil && platform.Spec.Services.DataIndex != nil &&
 		platform.Spec.Services.DataIndex.Enabled != nil && *platform.Spec.Services.DataIndex.Enabled
 }
 

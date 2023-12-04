@@ -66,7 +66,7 @@ func TestSonataFlowPlatformController(t *testing.T) {
 		assert.Equal(t, "quay.io/kiegroup", ksp.Spec.Build.Config.Registry.Address)
 		assert.Equal(t, "regcred", ksp.Spec.Build.Config.Registry.Secret)
 		assert.Equal(t, v1alpha08.OperatorBuildStrategy, ksp.Spec.Build.Config.BuildStrategy)
-		assert.Nil(t, ksp.Spec.Services.DataIndex)
+		assert.Nil(t, ksp.Spec.Services)
 		assert.Equal(t, v1alpha08.PlatformClusterKubernetes, ksp.Status.Cluster)
 
 		assert.Equal(t, v1alpha08.PlatformCreatingReason, ksp.Status.GetTopLevelCondition().Reason)
@@ -76,7 +76,7 @@ func TestSonataFlowPlatformController(t *testing.T) {
 		namespace := t.Name()
 		// Create a SonataFlowPlatform object with metadata and spec.
 		ksp := test.GetBasePlatformInReadyPhase(namespace)
-		ksp.Spec.Services = v1alpha08.ServicesPlatformSpec{
+		ksp.Spec.Services = &v1alpha08.ServicesPlatformSpec{
 			DataIndex: &v1alpha08.ServiceSpec{},
 		}
 
@@ -154,7 +154,7 @@ func TestSonataFlowPlatformController(t *testing.T) {
 		// Create a SonataFlowPlatform object with metadata and spec.
 		ksp := test.GetBasePlatformInReadyPhase(namespace)
 		var replicas int32 = 2
-		ksp.Spec.Services = v1alpha08.ServicesPlatformSpec{
+		ksp.Spec.Services = &v1alpha08.ServicesPlatformSpec{
 			DataIndex: &v1alpha08.ServiceSpec{
 				PodTemplate: v1alpha08.PodTemplateSpec{
 					Replicas: &replicas,

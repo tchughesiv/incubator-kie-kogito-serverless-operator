@@ -45,7 +45,7 @@ type SonataFlowPlatformSpec struct {
 	// Only workflows with the proper annotation will be configured to use these service(s).
 	// `sonataflow.org/profile: prod`
 	// +optional
-	Services ServicesPlatformSpec `json:"services,omitempty"`
+	Services *ServicesPlatformSpec `json:"services,omitempty"`
 }
 
 // PlatformCluster is the kind of orchestration cluster the platform is installed into
@@ -78,7 +78,29 @@ type SonataFlowPlatformStatus struct {
 	Version string `json:"version,omitempty"`
 	// Info generic information related to the build
 	//+operator-sdk:csv:customresourcedefinitions:type=status,displayName="info"
-	Info map[string]string `json:"info,omitempty"`
+	Info               map[string]string            `json:"info,omitempty"`
+	ClusterPlatformRef SonataFlowClusterPlatformRef `json:"clusterPlatformRef,omitempty"`
+}
+
+// SonataFlowClusterPlatformRef defines the observed state of SonataFlowPlatform
+// +k8s:openapi-gen=true
+type SonataFlowClusterPlatformRef struct {
+	Name        string                `json:"name,omitempty"`
+	PlatformRef SonataFlowPlatformRef `json:"platformRef,omitempty"`
+	Services    *PlatformServices     `json:"services,omitempty"`
+}
+
+// PlatformServices defines the observed state of SonataFlowPlatform
+// +k8s:openapi-gen=true
+type PlatformServices struct {
+	DataIndexRef  string `json:"dataIndexRef,omitempty"`
+	JobServiceRef string `json:"jobServiceRef,omitempty"`
+}
+
+// ServiceRef defines the observed state of SonataFlowPlatform
+// +k8s:openapi-gen=true
+type ServiceRef struct {
+	Name string `json:"name,omitempty"`
 }
 
 func (in *SonataFlowPlatformStatus) GetTopLevelConditionType() api.ConditionType {
