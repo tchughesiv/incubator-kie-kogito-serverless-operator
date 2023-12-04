@@ -28,6 +28,7 @@ const (
 
 	DataIndexServiceURLProperty = "mp.messaging.outgoing.kogito-processinstances-events.url"
 	DataIndexServiceURLProtocol = "http"
+	DataIndexServiceURLPath     = "/processes"
 
 	JobServiceRequestEventsURL       = "mp.messaging.outgoing.kogito-job-service-job-request-events.url"
 	JobServiceRequestEventsConnector = "mp.messaging.outgoing.kogito-job-service-job-request-events.connector"
@@ -35,6 +36,7 @@ const (
 	JobServiceStatusChangeEventsURL  = "mp.messaging.outgoing.kogito-job-service-job-status-events-http.url"
 	JobServiceURLProtocol            = "http"
 	JobServiceDataSourceReactiveURL  = "quarkus.datasource.reactive.url"
+	JobServiceURLPath                = "/v2/jobs/events"
 
 	KogitoProcessInstancesEnabled         = "kogito.events.processinstances.enabled"
 	KogitoProcessDefinitionsEnabled       = "kogito.events.processdefinitions.enabled"

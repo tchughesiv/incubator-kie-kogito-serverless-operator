@@ -159,9 +159,9 @@ func generateReactiveURL(postgresSpec *operatorapi.PersistencePostgreSql, schema
 func GenerateDataIndexWorkflowProperties(workflow *operatorapi.SonataFlow, platform *operatorapi.SonataFlowPlatform) (*properties.Properties, error) {
 	props := properties.NewProperties()
 	props.Set(constants.KogitoProcessInstancesEnabled, "false")
-	if workflow != nil && !profiles.IsDevProfile(workflow) && dataIndexEnabled(platform) {
+	di := NewDataIndexService(platform)
+	if workflow != nil && !profiles.IsDevProfile(workflow) && di.ServiceEnabled() {
 		props.Set(constants.KogitoProcessInstancesEnabled, "true")
-		di := NewDataIndexService(platform)
 		p, err := di.GenerateWorkflowProperties()
 		if err != nil {
 			return nil, err
@@ -181,8 +181,8 @@ func GenerateJobServiceWorkflowProperties(workflow *operatorapi.SonataFlow, plat
 	props := properties.NewProperties()
 	props.Set(constants.JobServiceRequestEventsConnector, constants.QuarkusHTTP)
 	props.Set(constants.JobServiceRequestEventsURL, fmt.Sprintf("%s://localhost/v2/jobs/events", constants.JobServiceURLProtocol))
-	if workflow != nil && !profiles.IsDevProfile(workflow) && jobServiceEnabled(platform) {
-		js := NewJobService(platform)
+	js := NewJobService(platform)
+	if workflow != nil && !profiles.IsDevProfile(workflow) && js.ServiceEnabled() {
 		p, err := js.GenerateWorkflowProperties()
 		if err != nil {
 			return nil, err

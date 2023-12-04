@@ -29,14 +29,13 @@ import (
 	"github.com/apache/incubator-kie-kogito-serverless-operator/controllers/profiles/common/constants"
 	"github.com/apache/incubator-kie-kogito-serverless-operator/log"
 	"github.com/apache/incubator-kie-kogito-serverless-operator/utils"
+	kubeutil "github.com/apache/incubator-kie-kogito-serverless-operator/utils/kubernetes"
 	"github.com/apache/incubator-kie-kogito-serverless-operator/workflowproj"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	kubeutil "github.com/apache/incubator-kie-kogito-serverless-operator/utils/kubernetes"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 )
 
 // NewServiceAction returns an action that deploys the services.
@@ -62,15 +61,19 @@ func (action *serviceAction) Handle(ctx context.Context, platform *operatorapi.S
 		return nil, err
 	}
 
-	if platform.Spec.Services.DataIndex != nil {
-		if err := createServiceComponents(ctx, action.client, platform, services.NewDataIndexService(platform)); err != nil {
-			return nil, err
+	if platform.Spec.Services != nil {
+		psDI := services.NewDataIndexService(platform)
+		if psDI.ServiceSetInSpec() {
+			if err := createServiceComponents(ctx, action.client, platform, psDI); err != nil {
+				return nil, err
+			}
 		}
-	}
 
-	if platform.Spec.Services.JobService != nil {
-		if err := createServiceComponents(ctx, action.client, platform, services.NewJobService(platform)); err != nil {
-			return nil, err
+		psJS := services.NewJobService(platform)
+		if psJS.ServiceSetInSpec() {
+			if err := createServiceComponents(ctx, action.client, platform, psJS); err != nil {
+				return nil, err
+			}
 		}
 	}
 
