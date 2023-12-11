@@ -22,13 +22,12 @@ package clusterplatform
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/apache/incubator-kie-kogito-serverless-operator/test"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSonataFlowBuildController(t *testing.T) {
-	platform := test.GetBasePlatform()
+	cPlatform := test.GetBaseClusterPlatform()
 
-	assert.NotNil(t, platform)
+	assert.NotNil(t, cPlatform)
 }
