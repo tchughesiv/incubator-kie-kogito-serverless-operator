@@ -79,14 +79,18 @@ func (r *SonataFlowPlatformReconciler) Reconcile(ctx context.Context, req reconc
 		return reconcile.Result{}, err
 	}
 
-	// if cluster platform (or it's referenced sonataflowplatform) changed, requeue all SonataFlowPlatforms in the cluster... except for the referenced one
-	if len(req.Namespace) == 0 && cPlatform != nil {
-		if cPlatform.Name == req.Name {
-			//platformRef := cPlatform.Spec.PlatformRef
+	// if cluster platform object (or it's referenced sonataflowplatform) changed, requeue all SonataFlowPlatforms in the cluster.
+	if cPlatform != nil {
+		platformRef := cPlatform.Spec.PlatformRef
+		namespacedName := types.NamespacedName{Namespace: platformRef.Namespace, Name: platformRef.Name}
+		if len(req.Namespace) == 0 && cPlatform.Name == req.Name {
+			// queue all platforms in the cluster?
+			return reconcile.Result{}, nil
 		}
-
-		// queue all platforms in the cluster?
-		return reconcile.Result{}, nil
+		if req.NamespacedName == namespacedName {
+			// queue all platforms in the cluster?
+			//return reconcile.Result{}, nil
+		}
 	}
 
 	// Make sure the operator is allowed to act on namespace
@@ -140,8 +144,17 @@ func (r *SonataFlowPlatformReconciler) Reconcile(ctx context.Context, req reconc
 		if req.NamespacedName == namespacedName {
 			platform = target
 		} else {
-			// retrieve referenced platform object (namespacedName) and assign to platformSpec
+			// retrieve referenced platform object
+			err = r.Reader.Get(ctx, namespacedName, platform)
+			if err != nil {
+				if errors.IsNotFound(err) {
+					return reconcile.Result{}, nil
+				}
+				klog.V(log.E).ErrorS(err, "Failed to get referenced SonataFlowPlatform")
+				return reconcile.Result{}, err
+			}
 		}
+
 		if platform != nil && platform.Spec.Services != nil {
 			platformServicesStatus = &operatorapi.PlatformServices{}
 			if platform.Spec.Services.DataIndex != nil {
