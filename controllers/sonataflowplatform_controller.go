@@ -72,7 +72,7 @@ type SonataFlowPlatformReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.1/pkg/reconcile
 func (r *SonataFlowPlatformReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 
-	// Fetch the SonataFlowClusterPlatform instance
+	// Fetch the active SonataFlowClusterPlatform instance
 	cPlatform, err := clusterplatform.GetActiveClusterPlatform(ctx, r.Client)
 	if err != nil && !errors.IsNotFound(err) {
 		klog.V(log.E).ErrorS(err, "Failed to get active SonataFlowClusterPlatform")
@@ -83,12 +83,15 @@ func (r *SonataFlowPlatformReconciler) Reconcile(ctx context.Context, req reconc
 	if cPlatform != nil {
 		platformRef := cPlatform.Spec.PlatformRef
 		namespacedName := types.NamespacedName{Namespace: platformRef.Namespace, Name: platformRef.Name}
+
+		// active clusterplatform object changed, queue all platforms in the cluster
 		if len(req.Namespace) == 0 && cPlatform.Name == req.Name {
-			// queue all platforms in the cluster?
+
 			return reconcile.Result{}, nil
 		}
+
+		// referenced sonataflowplatform object changed, queue all platforms in the cluster... except this referenced one
 		if req.NamespacedName == namespacedName {
-			// queue all platforms in the cluster?
 			//return reconcile.Result{}, nil
 		}
 	}
