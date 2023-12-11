@@ -66,7 +66,7 @@ func (action *serviceAction) Handle(ctx context.Context, platform *operatorapi.S
 }
 
 func createDataIndexComponents(ctx context.Context, client client.Client, platform *operatorapi.SonataFlowPlatform) error {
-	if platform.Spec.Services.DataIndex != nil {
+	if platform.Spec.Services != nil && platform.Spec.Services.DataIndex != nil {
 		if err := createDataIndexConfigMap(ctx, client, platform); err != nil {
 			return err
 		}

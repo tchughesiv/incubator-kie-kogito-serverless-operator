@@ -25,18 +25,12 @@ import (
 	"os"
 	"strings"
 
-	"k8s.io/klog/v2"
-
-	coordination "k8s.io/api/coordination/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/apache/incubator-kie-kogito-serverless-operator/api/metadata"
-
-	"github.com/apache/incubator-kie-kogito-serverless-operator/log"
-
 	operatorapi "github.com/apache/incubator-kie-kogito-serverless-operator/api/v1alpha08"
+	"github.com/apache/incubator-kie-kogito-serverless-operator/log"
 	"github.com/apache/incubator-kie-kogito-serverless-operator/utils"
+	"k8s.io/klog/v2"
+	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -45,7 +39,6 @@ const (
 
 	OperatorWatchNamespaceEnvVariable = "WATCH_NAMESPACE"
 	operatorNamespaceEnvVariable      = "NAMESPACE"
-	operatorPodNameEnvVariable        = "POD_NAME"
 )
 
 // Copied from https://github.com/kubernetes/enhancements/tree/master/keps/sig-cluster-lifecycle/generic/1755-communicating-a-local-registry
@@ -118,13 +111,13 @@ func GetOperatorLockName(operatorID string) string {
 	return fmt.Sprintf("%s-lock", operatorID)
 }
 
-// GetActivePlatform returns the currently installed active platform in the local namespace.
+// GetActiveClusterPlatform returns the currently installed active cluster platform.
 func GetActiveClusterPlatform(ctx context.Context, c ctrl.Client) (*operatorapi.SonataFlowClusterPlatform, error) {
-	return getLocalPlatform(ctx, c, true)
+	return getClusterPlatform(ctx, c, true)
 }
 
-// getLocalPlatform returns the currently installed platform or any platform existing in local namespace.
-func getLocalPlatform(ctx context.Context, c ctrl.Client, active bool) (*operatorapi.SonataFlowClusterPlatform, error) {
+// getClusterPlatform returns the currently installed cluster platform or any platform existing in the cluster.
+func getClusterPlatform(ctx context.Context, c ctrl.Client, active bool) (*operatorapi.SonataFlowClusterPlatform, error) {
 	klog.V(log.D).InfoS("Finding available cluster platforms")
 
 	lst, err := listPrimaryClusterPlatforms(ctx, c)
@@ -133,10 +126,10 @@ func getLocalPlatform(ctx context.Context, c ctrl.Client, active bool) (*operato
 	}
 
 	for _, p := range lst.Items {
-		platform := p // pin
-		if IsActive(&platform) {
-			klog.V(log.D).InfoS("Found active cluster platform", "platform", platform.Name)
-			return &platform, nil
+		cPlatform := p // pin
+		if IsActive(&cPlatform) {
+			klog.V(log.D).InfoS("Found active cluster platform", "platform", cPlatform.Name)
+			return &cPlatform, nil
 		}
 	}
 
@@ -150,7 +143,7 @@ func getLocalPlatform(ctx context.Context, c ctrl.Client, active bool) (*operato
 	return nil, nil
 }
 
-// listPrimaryClusterPlatforms returns all non-secondary platforms installed in a given namespace (only one will be active).
+// listPrimaryClusterPlatforms returns all non-secondary cluster platforms installed (only one will be active).
 func listPrimaryClusterPlatforms(ctx context.Context, c ctrl.Reader) (*operatorapi.SonataFlowClusterPlatformList, error) {
 	lst, err := listAllClusterPlatforms(ctx, c)
 	if err != nil {
@@ -167,7 +160,7 @@ func listPrimaryClusterPlatforms(ctx context.Context, c ctrl.Reader) (*operatora
 	return filtered, nil
 }
 
-// listAllClusterPlatforms returns all clusterplatforms installed in the cluster.
+// listAllClusterPlatforms returns all clusterplatforms installed.
 func listAllClusterPlatforms(ctx context.Context, c ctrl.Reader) (*operatorapi.SonataFlowClusterPlatformList, error) {
 	lst := operatorapi.NewSonataFlowClusterPlatformList()
 	if err := c.List(ctx, &lst); err != nil {
@@ -187,59 +180,6 @@ func IsSecondary(p *operatorapi.SonataFlowClusterPlatform) bool {
 		return true
 	}
 	return false
-}
-
-// IsNamespaceLocked tells if the namespace contains a lock indicating that an operator owns it.
-func IsNamespaceLocked(ctx context.Context, c ctrl.Reader, namespace string) (bool, error) {
-	if namespace == "" {
-		return false, nil
-	}
-
-	platforms, err := listPrimaryClusterPlatforms(ctx, c)
-	if err != nil {
-		return true, err
-	}
-
-	for _, platform := range platforms.Items {
-		lease := coordination.Lease{}
-
-		var operatorLockName string
-		if platform.Name != "" {
-			operatorLockName = GetOperatorLockName(platform.Name)
-		} else {
-			operatorLockName = OperatorLockName
-		}
-
-		if err := c.Get(ctx, ctrl.ObjectKey{Namespace: namespace, Name: operatorLockName}, &lease); err == nil || !k8serrors.IsNotFound(err) {
-			return true, err
-		}
-	}
-
-	return false, nil
-}
-
-// IsOperatorAllowedOnNamespace returns true if the current operator is allowed to react on changes in the given namespace.
-func IsOperatorAllowedOnNamespace(ctx context.Context, c ctrl.Reader, namespace string) (bool, error) {
-	// allow all local operators
-	if !IsCurrentOperatorGlobal() {
-		return true, nil
-	}
-
-	// allow global operators that use a proper operator id
-	if utils.OperatorID() != "" {
-		return true, nil
-	}
-
-	operatorNamespace := GetOperatorNamespace()
-	if operatorNamespace == namespace {
-		// Global operator is allowed on its own namespace
-		return true, nil
-	}
-	alreadyOwned, err := IsNamespaceLocked(ctx, c, namespace)
-	if err != nil {
-		return false, err
-	}
-	return !alreadyOwned, nil
 }
 
 // IsOperatorHandler Operators matching the annotation operator id are allowed to reconcile.
@@ -271,32 +211,4 @@ func IsOperatorHandler(object ctrl.Object) bool {
 	}
 
 	return false
-}
-
-// IsOperatorHandlerConsideringLock uses normal IsOperatorHandler checks and adds additional check for legacy resources
-// that are missing a proper operator id annotation. In general two kind of operators race for reconcile these legacy resources.
-// The local operator for this namespace and the default global operator instance. Based on the existence of a namespace
-// lock the current local operator has precedence. When no lock exists the default global operator should reconcile.
-func IsOperatorHandlerConsideringLock(ctx context.Context, c ctrl.Reader, namespace string, object ctrl.Object) bool {
-	isHandler := IsOperatorHandler(object)
-	if !isHandler {
-		return false
-	}
-
-	resourceID := utils.GetOperatorIDAnnotation(object)
-	// add additional check on resources missing an operator id
-	if resourceID == "" {
-		operatorNamespace := GetOperatorNamespace()
-		if operatorNamespace == namespace {
-			// Global operator is allowed on its own namespace
-			return true
-		}
-
-		if locked, err := IsNamespaceLocked(ctx, c, namespace); err != nil || locked {
-			// namespace is locked so local operators do have precedence
-			return !IsCurrentOperatorGlobal()
-		}
-	}
-
-	return true
 }

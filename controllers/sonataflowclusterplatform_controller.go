@@ -80,14 +80,8 @@ func (r *SonataFlowClusterPlatformReconciler) Reconcile(ctx context.Context, req
 
 		instance.Status.Manager().InitializeConditions()
 
-		// Only process resources assigned to the operator
-		if !clusterplatform.IsOperatorHandlerConsideringLock(ctx, r.Reader, req.Namespace, &instance) {
-			klog.V(log.I).InfoS("Ignoring request because resource is not assigned to current operator")
-			return reconcile.Result{}, nil
-		}
 		actions := []clusterplatform.Action{
 			clusterplatform.NewInitializeAction(),
-			clusterplatform.NewWarmAction(r.Reader),
 		}
 
 		target := instance.DeepCopy()
@@ -118,10 +112,12 @@ func (r *SonataFlowClusterPlatformReconciler) Reconcile(ctx context.Context, req
 						return reconcile.Result{}, err
 					}
 
-					if err := r.Client.Update(ctx, target); err != nil {
-						r.Recorder.Event(&instance, corev1.EventTypeNormal, "Spec Updated", fmt.Sprintf("Updated cluster platform condition to %s", instance.Status.GetTopLevelCondition()))
-						return reconcile.Result{}, err
-					}
+					/*
+						if err := r.Client.Update(ctx, target); err != nil {
+							r.Recorder.Event(&instance, corev1.EventTypeNormal, "Spec Updated", fmt.Sprintf("Updated cluster platform condition to %s", instance.Status.GetTopLevelCondition()))
+							return reconcile.Result{}, err
+						}
+					*/
 				}
 
 				// handle one action at time so the resource
@@ -151,11 +147,11 @@ func (r *SonataFlowClusterPlatformReconciler) Reconcile(ctx context.Context, req
 
 		if cPlatform != nil {
 			platformRef := cPlatform.Spec.PlatformRef
-			namespacedNAme := types.NamespacedName{Namespace: platformRef.Namespace, Name: platformRef.Name}
-			if namespacedNAme == req.NamespacedName {
+			namespacedName := types.NamespacedName{Namespace: platformRef.Namespace, Name: platformRef.Name}
+			if namespacedName == req.NamespacedName {
 				// Fetch the referenced SonataFlowPlatform instance
 				platform := &operatorapi.SonataFlowPlatform{}
-				err = r.Client.Get(ctx, namespacedNAme, platform)
+				err = r.Client.Get(ctx, namespacedName, platform)
 				if err != nil {
 					if errors.IsNotFound(err) {
 						return reconcile.Result{}, nil
@@ -165,7 +161,7 @@ func (r *SonataFlowClusterPlatformReconciler) Reconcile(ctx context.Context, req
 				}
 				//
 				// set cluster platform status accordingly
-				//
+				// ??? was platform deleted? ...
 			}
 		}
 	}
@@ -179,9 +175,4 @@ func (r *SonataFlowClusterPlatformReconciler) SetupWithManager(mgr ctrlrun.Manag
 		For(&operatorapi.SonataFlowClusterPlatform{}).
 		Watches(&operatorapi.SonataFlowPlatform{}, &handler.EnqueueRequestForObject{}).
 		Complete(r)
-}
-
-func (r *SonataFlowClusterPlatformReconciler) getActiveClusterPlatform(mgr ctrlrun.Manager) (*operatorapi.SonataFlowClusterPlatform, error) {
-
-	return nil, nil
 }

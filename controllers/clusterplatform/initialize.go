@@ -21,10 +21,15 @@ package clusterplatform
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/apache/incubator-kie-kogito-serverless-operator/api"
 	"github.com/apache/incubator-kie-kogito-serverless-operator/api/metadata"
 	operatorapi "github.com/apache/incubator-kie-kogito-serverless-operator/api/v1alpha08"
+	"github.com/apache/incubator-kie-kogito-serverless-operator/log"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/klog/v2"
 )
 
 // NewInitializeAction returns an action that initializes the platform configuration when not provided by the user.
@@ -44,24 +49,51 @@ func (action *initializeAction) CanHandle(platform *operatorapi.SonataFlowCluste
 	return platform.Status.GetTopLevelCondition().IsUnknown() || platform.Status.IsDuplicated()
 }
 
-func (action *initializeAction) Handle(ctx context.Context, platform *operatorapi.SonataFlowClusterPlatform) (*operatorapi.SonataFlowClusterPlatform, error) {
-	duplicate, err := action.isPrimaryDuplicate(ctx, platform)
+func (action *initializeAction) Handle(ctx context.Context, cPlatform *operatorapi.SonataFlowClusterPlatform) (*operatorapi.SonataFlowClusterPlatform, error) {
+	duplicate, err := action.isPrimaryDuplicate(ctx, cPlatform)
 	if err != nil {
 		return nil, err
 	}
 	if duplicate {
 		// another platform already present in the namespace
-		if !platform.Status.IsDuplicated() {
-			plat := platform.DeepCopy()
-			plat.Status.Manager().MarkFalse(api.SucceedConditionType, operatorapi.PlatformDuplicatedReason, "")
-			return plat, nil
+		if !cPlatform.Status.IsDuplicated() {
+			cPlat := cPlatform.DeepCopy()
+			cPlat.Status.Manager().MarkFalse(api.SucceedConditionType, operatorapi.PlatformDuplicatedReason, "")
+			return cPlat, nil
 		}
 
 		return nil, nil
 	}
-	platform.Status.Version = metadata.SpecVersion
+	cPlatform.Status.Version = metadata.SpecVersion
+	platformRef := cPlatform.Spec.PlatformRef
 
-	return platform, nil
+	// Check platform status
+	platform := operatorapi.SonataFlowPlatform{}
+	err = action.client.Get(ctx, types.NamespacedName{Namespace: platformRef.Namespace, Name: platformRef.Name}, &platform)
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			klog.V(log.D).InfoS("%s platform does not exist in %s namespace.", platformRef.Name, platformRef.Namespace)
+			cPlatform.Status.Manager().MarkFalse(api.FailedConditionType, operatorapi.PlatformNotFoundReason,
+				fmt.Sprintf("%s platform does not exist in %s namespace.", platformRef.Name, platformRef.Namespace))
+			return cPlatform, nil
+		}
+		return nil, err
+	}
+
+	switch platform.Status.GetTopLevelCondition().Type {
+	case api.SucceedConditionType:
+		klog.V(log.D).InfoS("Cluster platform successfully warmed up")
+		cPlatform.Status.Manager().MarkTrueWithReason(api.SucceedConditionType, operatorapi.PlatformWarmingReason, "Cluster platform successfully warmed up")
+		return cPlatform, nil
+		//	case api.RunningConditionType:
+		//		return nil, errors.New("failed to warm up Kaniko cache")
+	default:
+		klog.V(log.D).InfoS("Waiting for %s platform to warm up in %s namespace...", platformRef.Name, platformRef.Namespace)
+		// Requeue
+		return nil, nil
+	}
+
+	//return cPlatform, nil
 }
 
 // Function to double-check if there is already an active platform on the current context (i.e. namespace)

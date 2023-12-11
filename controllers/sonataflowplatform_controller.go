@@ -83,12 +83,12 @@ func (r *SonataFlowPlatformReconciler) Reconcile(ctx context.Context, req reconc
 	}
 
 	// if cluster platform (or it's referenced sonataflowplatform) changed, requeue all SonataFlowPlatforms in the cluster... except for the referenced one
-	if len(req.Namespace) == 0 {
-		if cPlatform != nil && cPlatform.Name == req.Name {
+	if len(req.Namespace) == 0 && cPlatform != nil {
+		if cPlatform.Name == req.Name {
 			//platformRef := cPlatform.Spec.PlatformRef
 		}
 		// queue all platforms in the cluster?
-		//return reconcile.Result{}, nil
+		return reconcile.Result{}, nil
 	}
 
 	// Make sure the operator is allowed to act on namespace
