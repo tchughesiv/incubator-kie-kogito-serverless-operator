@@ -24,29 +24,26 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/apache/incubator-kie-kogito-serverless-operator/api"
+	operatorapi "github.com/apache/incubator-kie-kogito-serverless-operator/api/v1alpha08"
+	sonataflowv1alpha08 "github.com/apache/incubator-kie-kogito-serverless-operator/api/v1alpha08"
+	clientr "github.com/apache/incubator-kie-kogito-serverless-operator/container-builder/client"
+	"github.com/apache/incubator-kie-kogito-serverless-operator/controllers/clusterplatform"
+	"github.com/apache/incubator-kie-kogito-serverless-operator/controllers/platform"
+	"github.com/apache/incubator-kie-kogito-serverless-operator/controllers/profiles/common"
+	"github.com/apache/incubator-kie-kogito-serverless-operator/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	"github.com/apache/incubator-kie-kogito-serverless-operator/api"
-
-	clientr "github.com/apache/incubator-kie-kogito-serverless-operator/container-builder/client"
-
-	"github.com/apache/incubator-kie-kogito-serverless-operator/controllers/clusterplatform"
-	"github.com/apache/incubator-kie-kogito-serverless-operator/controllers/platform"
-
 	ctrlrun "sigs.k8s.io/controller-runtime"
 	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
-
-	operatorapi "github.com/apache/incubator-kie-kogito-serverless-operator/api/v1alpha08"
-	sonataflowv1alpha08 "github.com/apache/incubator-kie-kogito-serverless-operator/api/v1alpha08"
-	"github.com/apache/incubator-kie-kogito-serverless-operator/log"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // SonataFlowPlatformReconciler reconciles a SonataFlowPlatform object
@@ -87,6 +84,7 @@ func (r *SonataFlowPlatformReconciler) Reconcile(ctx context.Context, req reconc
 		if cPlatform.Name == req.Name {
 			//platformRef := cPlatform.Spec.PlatformRef
 		}
+
 		// queue all platforms in the cluster?
 		return reconcile.Result{}, nil
 	}
@@ -131,6 +129,34 @@ func (r *SonataFlowPlatformReconciler) Reconcile(ctx context.Context, req reconc
 	}
 
 	target := instance.DeepCopy()
+
+	// If an active cluster platform exists, update platform.Status accordingly
+	if cPlatform != nil {
+		var platform *operatorapi.SonataFlowPlatform
+		var platformServicesStatus *operatorapi.PlatformServices
+
+		platformRef := cPlatform.Spec.PlatformRef
+		namespacedName := types.NamespacedName{Namespace: platformRef.Namespace, Name: platformRef.Name}
+		if req.NamespacedName == namespacedName {
+			platform = target
+		} else {
+			// retrieve referenced platform object (namespacedName) and assign to platformSpec
+		}
+		if platform != nil && platform.Spec.Services != nil {
+			platformServicesStatus = &operatorapi.PlatformServices{}
+			if platform.Spec.Services.DataIndex != nil {
+				platformServicesStatus.DataIndexRef = common.GetDataIndexName(platform)
+			}
+		}
+		target.Status.ClusterPlatformRef = operatorapi.SonataFlowClusterPlatformRef{
+			Name: cPlatform.Name,
+			PlatformRef: operatorapi.SonataFlowPlatformRef{
+				Name:      platformRef.Name,
+				Namespace: platformRef.Namespace,
+			},
+			Services: platformServicesStatus,
+		}
+	}
 
 	for _, a := range actions {
 		cli, _ := clientr.FromCtrlClientSchemeAndConfig(r.Client, r.Scheme, r.Config)

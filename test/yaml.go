@@ -101,6 +101,13 @@ func getSonataFlowClusterPlatform(testFile string) *operatorapi.SonataFlowCluste
 	return kscp
 }
 
+func GetSonataFlowClusterPlatformInReadyPhase(path string, namespace string) *operatorapi.SonataFlowClusterPlatform {
+	kscp := getSonataFlowClusterPlatform(path)
+	kscp.Spec.PlatformRef.Namespace = namespace
+	kscp.Status.Manager().MarkTrue(api.SucceedConditionType)
+	return kscp
+}
+
 func getSonataFlowPlatform(testFile string) *operatorapi.SonataFlowPlatform {
 	ksp := &operatorapi.SonataFlowPlatform{}
 	yamlFile, err := os.ReadFile(path.Join(getTestDataDir(), testFile))
@@ -195,6 +202,10 @@ func GetBaseSonataFlowWithProdProfile(namespace string) *operatorapi.SonataFlow 
 func GetBaseSonataFlowWithProdOpsProfile(namespace string) *operatorapi.SonataFlow {
 	workflow := GetSonataFlow(SonataFlowSimpleOpsYamlCR, namespace)
 	return workflow
+}
+
+func GetBaseClusterPlatformInReadyPhase(namespace string) *operatorapi.SonataFlowClusterPlatform {
+	return GetSonataFlowClusterPlatformInReadyPhase(sonataFlowClusterPlatformYamlCR, namespace)
 }
 
 func GetBasePlatformInReadyPhase(namespace string) *operatorapi.SonataFlowPlatform {
