@@ -73,19 +73,19 @@ type SonataFlowPlatformReconciler struct {
 func (r *SonataFlowPlatformReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 
 	// Fetch the active SonataFlowClusterPlatform instance
-	cPlatform, err := clusterplatform.GetActiveClusterPlatform(ctx, r.Client)
+	sfcPlatform, err := clusterplatform.GetActiveClusterPlatform(ctx, r.Client)
 	if err != nil && !errors.IsNotFound(err) {
 		klog.V(log.E).ErrorS(err, "Failed to get active SonataFlowClusterPlatform")
 		return reconcile.Result{}, err
 	}
 
 	// if cluster platform object (or it's referenced sonataflowplatform) changed, requeue all SonataFlowPlatforms in the cluster.
-	if cPlatform != nil {
-		platformRef := cPlatform.Spec.PlatformRef
+	if sfcPlatform != nil {
+		platformRef := sfcPlatform.Spec.PlatformRef
 		namespacedName := types.NamespacedName{Namespace: platformRef.Namespace, Name: platformRef.Name}
 
 		// active clusterplatform object changed, queue all platforms in the cluster
-		if len(req.Namespace) == 0 && cPlatform.Name == req.Name {
+		if len(req.Namespace) == 0 && sfcPlatform.Name == req.Name {
 
 			return reconcile.Result{}, nil
 		}
@@ -138,39 +138,42 @@ func (r *SonataFlowPlatformReconciler) Reconcile(ctx context.Context, req reconc
 	target := instance.DeepCopy()
 
 	// If an active cluster platform exists, update platform.Status accordingly
-	if cPlatform != nil {
-		var platform *operatorapi.SonataFlowPlatform
-		var platformServicesStatus *operatorapi.PlatformServices
+	if sfcPlatform != nil {
+		sfPlatform := &operatorapi.SonataFlowPlatform{}
+		var sfcPlatformServicesStatus *operatorapi.PlatformServices
 
-		platformRef := cPlatform.Spec.PlatformRef
+		platformRef := sfcPlatform.Spec.PlatformRef
 		namespacedName := types.NamespacedName{Namespace: platformRef.Namespace, Name: platformRef.Name}
 		if req.NamespacedName == namespacedName {
-			platform = target
+			sfPlatform = target
 		} else {
 			// retrieve referenced platform object
-			err = r.Reader.Get(ctx, namespacedName, platform)
+			err = r.Reader.Get(ctx, namespacedName, sfPlatform)
 			if err != nil {
 				if errors.IsNotFound(err) {
 					return reconcile.Result{}, nil
 				}
-				klog.V(log.E).ErrorS(err, "Failed to get referenced SonataFlowPlatform")
+				klog.V(log.E).ErrorS(err, "Failed to get referenced SonataFlowPlatform", namespacedName)
 				return reconcile.Result{}, err
 			}
 		}
 
-		if platform != nil && platform.Spec.Services != nil {
-			platformServicesStatus = &operatorapi.PlatformServices{}
-			if platform.Spec.Services.DataIndex != nil {
-				platformServicesStatus.DataIndexRef = common.GetDataIndexName(platform)
+		if sfPlatform != nil && sfPlatform.Spec.Services != nil {
+			if (target.Spec.Services == nil || target.Spec.Services.DataIndex == nil) &&
+				sfPlatform.Spec.Services.DataIndex != nil {
+				if sfcPlatformServicesStatus == nil {
+					sfcPlatformServicesStatus = &operatorapi.PlatformServices{}
+				}
+				sfcPlatformServicesStatus.DataIndexRef = common.GetDataIndexName(sfPlatform)
 			}
 		}
 		target.Status.ClusterPlatformRef = operatorapi.SonataFlowClusterPlatformRef{
-			Name: cPlatform.Name,
+			Name: sfcPlatform.Name,
 			PlatformRef: operatorapi.SonataFlowPlatformRef{
 				Name:      platformRef.Name,
 				Namespace: platformRef.Namespace,
 			},
-			Services: platformServicesStatus,
+			Services: sfcPlatformServicesStatus,
 		}
 	}
 
