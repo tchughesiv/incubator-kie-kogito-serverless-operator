@@ -78,8 +78,8 @@ type SonataFlowPlatformStatus struct {
 	Version string `json:"version,omitempty"`
 	// Info generic information related to the build
 	//+operator-sdk:csv:customresourcedefinitions:type=status,displayName="info"
-	Info               map[string]string            `json:"info,omitempty"`
-	ClusterPlatformRef SonataFlowClusterPlatformRef `json:"clusterPlatformRef,omitempty"`
+	Info               map[string]string             `json:"info,omitempty"`
+	ClusterPlatformRef *SonataFlowClusterPlatformRef `json:"clusterPlatformRef,omitempty"`
 }
 
 // SonataFlowClusterPlatformRef defines the observed state of SonataFlowPlatform

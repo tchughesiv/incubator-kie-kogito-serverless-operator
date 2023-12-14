@@ -311,6 +311,9 @@ func TestSonataFlowPlatformController(t *testing.T) {
 		}
 
 		assert.NoError(t, cl.Get(context.TODO(), types.NamespacedName{Name: ksp2.Name, Namespace: ksp2.Namespace}, ksp2))
+		assert.NotNil(t, ksp2.Status.ClusterPlatformRef)
+		assert.Equal(t, kscp.Spec.PlatformRef.Name, ksp2.Status.ClusterPlatformRef.PlatformRef.Name)
+		assert.Equal(t, kscp.Spec.PlatformRef.Namespace, ksp2.Status.ClusterPlatformRef.PlatformRef.Namespace)
 		assert.NotNil(t, ksp2.Status.ClusterPlatformRef.Services)
 		assert.Equal(t, common.GetDataIndexName(ksp), ksp2.Status.ClusterPlatformRef.Services.DataIndexRef)
 
@@ -319,12 +322,15 @@ func TestSonataFlowPlatformController(t *testing.T) {
 		}
 
 		assert.NoError(t, cl.Update(context.TODO(), ksp2))
-		_, err = r.Reconcile(context.TODO(), req)
+		_, err = r.Reconcile(context.TODO(), req2)
 		if err != nil {
 			t.Fatalf("reconcile: (%v)", err)
 		}
 
 		assert.NoError(t, cl.Get(context.TODO(), types.NamespacedName{Name: ksp2.Name, Namespace: ksp2.Namespace}, ksp2))
+		assert.NotNil(t, ksp2.Status.ClusterPlatformRef)
+		assert.Equal(t, kscp.Spec.PlatformRef.Name, ksp2.Status.ClusterPlatformRef.PlatformRef.Name)
+		assert.Equal(t, kscp.Spec.PlatformRef.Namespace, ksp2.Status.ClusterPlatformRef.PlatformRef.Namespace)
 		assert.Nil(t, ksp2.Status.ClusterPlatformRef.Services)
 	})
 }
