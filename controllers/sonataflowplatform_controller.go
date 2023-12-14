@@ -21,7 +21,6 @@ package controllers
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -160,15 +159,14 @@ func (r *SonataFlowPlatformReconciler) Reconcile(ctx context.Context, req reconc
 		}
 
 		if sfPlatform.Spec.Services != nil {
-			if sfPlatform.Spec.Services.DataIndex != nil {
-				if target.Spec.Services == nil || (target.Spec.Services != nil && target.Spec.Services.DataIndex == nil) {
-					test, _ := json.Marshal(target)
-					fmt.Println(string(test))
-					if sfcPlatformServicesStatus == nil {
-						sfcPlatformServicesStatus = &operatorapi.PlatformServices{}
-					}
-					sfcPlatformServicesStatus.DataIndexRef = common.GetDataIndexName(sfPlatform)
+			if sfPlatform.Spec.Services.DataIndex != nil &&
+				(target.Spec.Services == nil || (target.Spec.Services != nil && target.Spec.Services.DataIndex == nil)) {
+
+				if sfcPlatformServicesStatus == nil {
+					sfcPlatformServicesStatus = &operatorapi.PlatformServices{}
 				}
+				sfcPlatformServicesStatus.DataIndexRef = common.GetDataIndexName(sfPlatform)
+
 			}
 		}
 
