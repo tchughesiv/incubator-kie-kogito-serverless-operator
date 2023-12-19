@@ -101,7 +101,6 @@ type PlatformServices struct {
 // +k8s:openapi-gen=true
 type PlatformServiceRef struct {
 	Name string `json:"name,omitempty"`
-	Url  string `json:"url,omitempty"`
 }
 
 // ServiceRef defines the observed state of SonataFlowPlatform

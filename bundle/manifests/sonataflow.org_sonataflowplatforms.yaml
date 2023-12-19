@@ -8337,16 +8337,12 @@ spec:
                         properties:
                           name:
                             type: string
-                          url:
-                            type: string
                         type: object
                       jobServiceRef:
                         description: PlatformServiceRef defines the observed state
                           of SonataFlowPlatform
                         properties:
                           name:
-                            type: string
-                          url:
                             type: string
                         type: object
                     type: object

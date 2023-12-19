@@ -210,19 +210,14 @@ func (r *SonataFlowPlatformReconciler) SonataFlowPlatformUpdateStatus(ctx contex
 			}
 		}
 
-		if sfPlatform.Spec.Services != nil {
-
-			if common.DataIndexEnabledInSpec(sfPlatform) &&
-				(target.Spec.Services == nil || (target.Spec.Services != nil && target.Spec.Services.DataIndex == nil)) {
-				if sfcPlatformServicesStatus == nil {
-					sfcPlatformServicesStatus = &operatorapi.PlatformServices{}
-				}
-				sfcPlatformServicesStatus.DataIndexRef = &operatorapi.PlatformServiceRef{
-					Name: common.GetDataIndexName(sfPlatform),
-					Url:  common.GetDataIndexUrl(sfPlatform),
-				}
+		if common.DataIndexEnabledInSpec(sfPlatform) &&
+			(target.Spec.Services == nil || (target.Spec.Services != nil && target.Spec.Services.DataIndex == nil)) {
+			if sfcPlatformServicesStatus == nil {
+				sfcPlatformServicesStatus = &operatorapi.PlatformServices{}
 			}
-
+			sfcPlatformServicesStatus.DataIndexRef = &operatorapi.PlatformServiceRef{
+				Name: common.GetDataIndexName(sfPlatform),
+			}
 		}
 
 		target.Status.ClusterPlatformRef = &operatorapi.SonataFlowClusterPlatformRef{

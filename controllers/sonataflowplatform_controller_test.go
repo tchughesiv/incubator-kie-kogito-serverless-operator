@@ -318,7 +318,6 @@ func TestSonataFlowPlatformController(t *testing.T) {
 		assert.Nil(t, ksp2.Status.ClusterPlatformRef.Services.JobServiceRef)
 		assert.NotNil(t, ksp2.Status.ClusterPlatformRef.Services.DataIndexRef)
 		assert.Equal(t, common.GetDataIndexName(ksp), ksp2.Status.ClusterPlatformRef.Services.DataIndexRef.Name)
-		assert.Equal(t, common.GetDataIndexUrl(ksp), ksp2.Status.ClusterPlatformRef.Services.DataIndexRef.Url)
 
 		ksp2.Spec.Services = &v1alpha08.ServicesPlatformSpec{
 			DataIndex: &v1alpha08.ServiceSpec{},

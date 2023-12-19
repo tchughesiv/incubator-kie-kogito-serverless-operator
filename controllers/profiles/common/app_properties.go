@@ -237,9 +237,13 @@ func GetPlatformServiceDataIndexName(platform *operatorapi.SonataFlowPlatform) s
 
 func GetDataIndexUrl(platform *operatorapi.SonataFlowPlatform) string {
 	if DataIndexEnabledInStatus(platform) {
-		return fmt.Sprintf("%s://%s.%s/processes", dataIndexServiceUrlProtocol, GetPlatformServiceDataIndexName(platform), platform.Status.ClusterPlatformRef.PlatformRef.Namespace)
+		return createDataIndexUrl(GetPlatformServiceDataIndexName(platform), platform.Status.ClusterPlatformRef.PlatformRef.Namespace)
 	}
-	return fmt.Sprintf("%s://%s.%s/processes", dataIndexServiceUrlProtocol, GetDataIndexName(platform), platform.Namespace)
+	return createDataIndexUrl(GetDataIndexName(platform), platform.Namespace)
+}
+
+func createDataIndexUrl(diName, diNamespace string) string {
+	return fmt.Sprintf("%s://%s.%s/processes", dataIndexServiceUrlProtocol, diName, diNamespace)
 }
 
 func GetDataIndexCmName(platform *operatorapi.SonataFlowPlatform) string {
