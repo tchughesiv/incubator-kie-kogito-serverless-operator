@@ -228,16 +228,9 @@ func GetDataIndexName(platform *operatorapi.SonataFlowPlatform) string {
 	return ""
 }
 
-func GetPlatformServiceDataIndexName(platform *operatorapi.SonataFlowPlatform) string {
-	if platform != nil && platform.Status.ClusterPlatformRef != nil {
-		return platform.Status.ClusterPlatformRef.PlatformRef.Name + "-" + DataIndexName
-	}
-	return ""
-}
-
 func GetDataIndexUrl(platform *operatorapi.SonataFlowPlatform) string {
 	if DataIndexEnabledInStatus(platform) {
-		return createDataIndexUrl(GetPlatformServiceDataIndexName(platform), platform.Status.ClusterPlatformRef.PlatformRef.Namespace)
+		return createDataIndexUrl(platform.Status.ClusterPlatformRef.Services.DataIndexRef.Name, platform.Status.ClusterPlatformRef.PlatformRef.Namespace)
 	}
 	return createDataIndexUrl(GetDataIndexName(platform), platform.Namespace)
 }
