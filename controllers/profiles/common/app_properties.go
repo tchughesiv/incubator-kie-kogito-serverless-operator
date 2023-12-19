@@ -228,19 +228,22 @@ func GetDataIndexName(platform *operatorapi.SonataFlowPlatform) string {
 	return ""
 }
 
-func GetDataIndexUrl(platform *operatorapi.SonataFlowPlatform) string {
-	if DataIndexEnabledInStatus(platform) {
-		return createDataIndexUrl(platform.Status.ClusterPlatformRef.Services.DataIndexRef.Name, platform.Status.ClusterPlatformRef.PlatformRef.Namespace)
-	}
-	return createDataIndexUrl(GetDataIndexName(platform), platform.Namespace)
-}
-
-func createDataIndexUrl(diName, diNamespace string) string {
-	return fmt.Sprintf("%s://%s.%s/processes", dataIndexServiceUrlProtocol, diName, diNamespace)
-}
-
 func GetDataIndexCmName(platform *operatorapi.SonataFlowPlatform) string {
 	return GetDataIndexName(platform) + "-props"
+}
+
+func GetDataIndexUrl(platform *operatorapi.SonataFlowPlatform) string {
+	if DataIndexEnabledInSpec(platform) {
+		return CreateDataIndexUrl(GetDataIndexName(platform), platform.Namespace)
+	}
+	if DataIndexEnabledInStatus(platform) {
+		return platform.Status.ClusterPlatformRef.Services.DataIndexRef.Url
+	}
+	return ""
+}
+
+func CreateDataIndexUrl(diName, diNamespace string) string {
+	return fmt.Sprintf("%s://%s.%s/processes", dataIndexServiceUrlProtocol, diName, diNamespace)
 }
 
 func (a *appPropertyHandler) requireServiceDiscovery() bool {

@@ -216,7 +216,7 @@ func (r *SonataFlowPlatformReconciler) SonataFlowPlatformUpdateStatus(ctx contex
 				sfcPlatformServicesStatus = &operatorapi.PlatformServices{}
 			}
 			sfcPlatformServicesStatus.DataIndexRef = &operatorapi.PlatformServiceRef{
-				Name: common.GetDataIndexName(sfPlatform),
+				Url: common.CreateDataIndexUrl(common.GetDataIndexName(sfPlatform), sfPlatform.Namespace),
 			}
 		}
 
