@@ -154,10 +154,9 @@ func (a *appPropertyHandler) withKogitoServiceUrl() AppPropertyHandler {
 // See Service Discovery https://kubernetes.io/docs/concepts/services-networking/service/#dns
 func (a *appPropertyHandler) withDataIndexServiceUrl() AppPropertyHandler {
 	if profiles.IsProdProfile(a.workflow) && DataIndexEnabled(a.platform) {
-		a.addDefaultMutableProperty(
-			dataIndexServiceUrlProperty,
-			GetDataIndexUrl(a.platform),
-		)
+		if url := GetDataIndexUrl(a.platform); len(url) > 0 {
+			a.addDefaultMutableProperty(dataIndexServiceUrlProperty, url)
+		}
 	}
 
 	return a
@@ -178,13 +177,17 @@ func (a *appPropertyHandler) addDefaultMutableProperty(name string, value string
 	return a
 }
 
+func DataIndexSetInSpec(platform *operatorapi.SonataFlowPlatform) bool {
+	return platform != nil && platform.Spec.Services != nil && platform.Spec.Services.DataIndex != nil
+}
+
 func DataIndexEnabledInSpec(platform *operatorapi.SonataFlowPlatform) bool {
-	return platform != nil && platform.Spec.Services != nil && platform.Spec.Services.DataIndex != nil &&
+	return DataIndexSetInSpec(platform) &&
 		platform.Spec.Services.DataIndex.Enabled != nil && *platform.Spec.Services.DataIndex.Enabled
 }
 
 func DataIndexEnabledInStatus(platform *operatorapi.SonataFlowPlatform) bool {
-	return platform != nil && platform.Status.ClusterPlatformRef != nil &&
+	return platform != nil && !DataIndexSetInSpec(platform) && platform.Status.ClusterPlatformRef != nil &&
 		platform.Status.ClusterPlatformRef.Services != nil && platform.Status.ClusterPlatformRef.Services.DataIndexRef != nil
 }
 
