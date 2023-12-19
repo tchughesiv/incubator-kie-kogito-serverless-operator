@@ -212,7 +212,7 @@ func (r *SonataFlowPlatformReconciler) SonataFlowPlatformUpdateStatus(ctx contex
 
 		if sfPlatform.Spec.Services != nil {
 
-			if sfPlatform.Spec.Services.DataIndex != nil &&
+			if common.DataIndexEnabledInSpec(sfPlatform) &&
 				(target.Spec.Services == nil || (target.Spec.Services != nil && target.Spec.Services.DataIndex == nil)) {
 				if sfcPlatformServicesStatus == nil {
 					sfcPlatformServicesStatus = &operatorapi.PlatformServices{}

@@ -315,6 +315,7 @@ func TestSonataFlowPlatformController(t *testing.T) {
 		assert.Equal(t, kscp.Spec.PlatformRef.Name, ksp2.Status.ClusterPlatformRef.PlatformRef.Name)
 		assert.Equal(t, kscp.Spec.PlatformRef.Namespace, ksp2.Status.ClusterPlatformRef.PlatformRef.Namespace)
 		assert.NotNil(t, ksp2.Status.ClusterPlatformRef.Services)
+		assert.Nil(t, ksp2.Status.ClusterPlatformRef.Services.JobServiceRef)
 		assert.NotNil(t, ksp2.Status.ClusterPlatformRef.Services.DataIndexRef)
 		assert.Equal(t, common.GetDataIndexName(ksp), ksp2.Status.ClusterPlatformRef.Services.DataIndexRef.Name)
 		assert.Equal(t, common.GetDataIndexUrl(ksp), ksp2.Status.ClusterPlatformRef.Services.DataIndexRef.Url)

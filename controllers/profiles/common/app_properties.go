@@ -153,7 +153,7 @@ func (a *appPropertyHandler) withKogitoServiceUrl() AppPropertyHandler {
 // withDataIndexServiceUrl adds the property dataIndexServiceUrlProperty to the application properties.
 // See Service Discovery https://kubernetes.io/docs/concepts/services-networking/service/#dns
 func (a *appPropertyHandler) withDataIndexServiceUrl() AppPropertyHandler {
-	if profiles.IsProdProfile(a.workflow) && dataIndexEnabled(a.platform) {
+	if profiles.IsProdProfile(a.workflow) && DataIndexEnabled(a.platform) {
 		a.addDefaultMutableProperty(
 			dataIndexServiceUrlProperty,
 			GetDataIndexUrl(a.platform),
@@ -178,9 +178,18 @@ func (a *appPropertyHandler) addDefaultMutableProperty(name string, value string
 	return a
 }
 
-func dataIndexEnabled(platform *operatorapi.SonataFlowPlatform) bool {
+func DataIndexEnabledInSpec(platform *operatorapi.SonataFlowPlatform) bool {
 	return platform != nil && platform.Spec.Services != nil && platform.Spec.Services.DataIndex != nil &&
 		platform.Spec.Services.DataIndex.Enabled != nil && *platform.Spec.Services.DataIndex.Enabled
+}
+
+func DataIndexEnabledInStatus(platform *operatorapi.SonataFlowPlatform) bool {
+	return platform != nil && platform.Status.ClusterPlatformRef != nil &&
+		platform.Status.ClusterPlatformRef.Services != nil && platform.Status.ClusterPlatformRef.Services.DataIndexRef != nil
+}
+
+func DataIndexEnabled(platform *operatorapi.SonataFlowPlatform) bool {
+	return DataIndexEnabledInSpec(platform) || DataIndexEnabledInStatus(platform)
 }
 
 // NewAppPropertyHandler creates the default workflow configurations property handler
@@ -213,24 +222,23 @@ func ImmutableApplicationProperties(workflow *operatorapi.SonataFlow, platform *
 }
 
 func GetDataIndexName(platform *operatorapi.SonataFlowPlatform) string {
-	return platform.Name + "-" + DataIndexName
+	if platform != nil {
+		return platform.Name + "-" + DataIndexName
+	}
+	return ""
 }
 
-func GetPlatformServiceRefName(platformService *operatorapi.PlatformServiceRef) string {
-	return platformService.Name + "-" + DataIndexName
+func GetPlatformServiceDataIndexName(platform *operatorapi.SonataFlowPlatform) string {
+	if platform != nil && platform.Status.ClusterPlatformRef != nil {
+		return platform.Status.ClusterPlatformRef.PlatformRef.Name + "-" + DataIndexName
+	}
+	return ""
 }
 
 func GetDataIndexUrl(platform *operatorapi.SonataFlowPlatform) string {
-	if platform != nil {
-		if platform.Status.ClusterPlatformRef != nil {
-			if platform.Status.ClusterPlatformRef.Services != nil {
-				if platform.Status.ClusterPlatformRef.Services.DataIndexRef != nil {
-					return fmt.Sprintf("%s://%s.%s/processes", dataIndexServiceUrlProtocol, GetPlatformServiceRefName(platform.Status.ClusterPlatformRef.Services.DataIndexRef), platform.Namespace)
-				}
-			}
-		}
+	if DataIndexEnabledInStatus(platform) {
+		return fmt.Sprintf("%s://%s.%s/processes", dataIndexServiceUrlProtocol, GetPlatformServiceDataIndexName(platform), platform.Status.ClusterPlatformRef.PlatformRef.Namespace)
 	}
-
 	return fmt.Sprintf("%s://%s.%s/processes", dataIndexServiceUrlProtocol, GetDataIndexName(platform), platform.Namespace)
 }
 
