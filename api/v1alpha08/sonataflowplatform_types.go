@@ -93,8 +93,15 @@ type SonataFlowClusterPlatformRef struct {
 // PlatformServices defines the observed state of SonataFlowPlatform
 // +k8s:openapi-gen=true
 type PlatformServices struct {
-	DataIndexRef  string `json:"dataIndexRef,omitempty"`
-	JobServiceRef string `json:"jobServiceRef,omitempty"`
+	DataIndexRef  *PlatformServiceRef `json:"dataIndexRef,omitempty"`
+	JobServiceRef *PlatformServiceRef `json:"jobServiceRef,omitempty"`
+}
+
+// PlatformServiceRef defines the observed state of SonataFlowPlatform
+// +k8s:openapi-gen=true
+type PlatformServiceRef struct {
+	Name string `json:"name,omitempty"`
+	Url  string `json:"url,omitempty"`
 }
 
 // ServiceRef defines the observed state of SonataFlowPlatform

@@ -8332,9 +8332,23 @@ spec:
                     description: PlatformServices defines the observed state of SonataFlowPlatform
                     properties:
                       dataIndexRef:
-                        type: string
+                        description: PlatformServiceRef defines the observed state
+                          of SonataFlowPlatform
+                        properties:
+                          name:
+                            type: string
+                          url:
+                            type: string
+                        type: object
                       jobServiceRef:
-                        type: string
+                        description: PlatformServiceRef defines the observed state
+                          of SonataFlowPlatform
+                        properties:
+                          name:
+                            type: string
+                          url:
+                            type: string
+                        type: object
                     type: object
                 type: object
               conditions:

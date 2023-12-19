@@ -156,7 +156,7 @@ func (a *appPropertyHandler) withDataIndexServiceUrl() AppPropertyHandler {
 	if profiles.IsProdProfile(a.workflow) && dataIndexEnabled(a.platform) {
 		a.addDefaultMutableProperty(
 			dataIndexServiceUrlProperty,
-			fmt.Sprintf("%s://%s.%s/processes", dataIndexServiceUrlProtocol, GetDataIndexName(a.platform), a.platform.Namespace),
+			GetDataIndexUrl(a.platform),
 		)
 	}
 
@@ -214,6 +214,24 @@ func ImmutableApplicationProperties(workflow *operatorapi.SonataFlow, platform *
 
 func GetDataIndexName(platform *operatorapi.SonataFlowPlatform) string {
 	return platform.Name + "-" + DataIndexName
+}
+
+func GetPlatformServiceRefName(platformService *operatorapi.PlatformServiceRef) string {
+	return platformService.Name + "-" + DataIndexName
+}
+
+func GetDataIndexUrl(platform *operatorapi.SonataFlowPlatform) string {
+	if platform != nil {
+		if platform.Status.ClusterPlatformRef != nil {
+			if platform.Status.ClusterPlatformRef.Services != nil {
+				if platform.Status.ClusterPlatformRef.Services.DataIndexRef != nil {
+					return fmt.Sprintf("%s://%s.%s/processes", dataIndexServiceUrlProtocol, GetPlatformServiceRefName(platform.Status.ClusterPlatformRef.Services.DataIndexRef), platform.Namespace)
+				}
+			}
+		}
+	}
+
+	return fmt.Sprintf("%s://%s.%s/processes", dataIndexServiceUrlProtocol, GetDataIndexName(platform), platform.Namespace)
 }
 
 func GetDataIndexCmName(platform *operatorapi.SonataFlowPlatform) string {
