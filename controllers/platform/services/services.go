@@ -68,18 +68,18 @@ type Platform interface {
 	// GenerateServiceProperties returns a property object that contains the application properties required by the service deployment
 	GenerateServiceProperties() (*properties.Properties, error)
 
-	// ServiceSetInSpec returns true if the service is set in the spec.
-	ServiceSetInSpec() bool
-	// ServiceEnabledInSpec returns true if the service is enabled in the spec.
-	ServiceEnabledInSpec() bool
-	// ServiceBaseUrl returns the base url of the service
-	ServiceBaseUrl() string
+	// IsServiceSetInSpec returns true if the service is set in the spec.
+	IsServiceSetInSpec() bool
+	// IsServiceEnabledInSpec returns true if the service is enabled in the spec.
+	IsServiceEnabledInSpec() bool
+	// GetLocalServiceBaseUrl returns the base url of the local service
+	GetLocalServiceBaseUrl() string
 	// GetServiceBaseUrl returns the base url of the service, based on whether using local or cluster-scoped service.
 	GetServiceBaseUrl() string
 	// GetServiceUrl returns the service url, based on whether using local or cluster-scoped service.
 	GetServiceUrl() string
-	// ServiceEnabled returns true if the service is enabled in either the spec or the status.clusterPlatformRef.
-	ServiceEnabled() bool
+	// IsServiceEnabled returns true if the service is enabled in either the spec or the status.clusterPlatformRef.
+	IsServiceEnabled() bool
 	// SetServiceUrlInStatus sets the service url in status. if reconciled instance does not have service set in spec AND
 	// if cluster referenced platform has said service enabled, use the cluster platform's service
 	SetServiceUrlInStatus(clusterRefPlatform *operatorapi.SonataFlowPlatform)
@@ -115,34 +115,34 @@ func (d DataIndex) GetServiceName() string {
 
 func (d DataIndex) SetServiceUrlInStatus(clusterRefPlatform *operatorapi.SonataFlowPlatform) {
 	psDI := NewDataIndexService(clusterRefPlatform)
-	if !servicesSet(d.platform) && psDI.ServiceEnabledInSpec() {
+	if !isServicesSet(d.platform) && psDI.IsServiceEnabledInSpec() {
 		if d.platform.Status.ClusterPlatformRef != nil {
 			if d.platform.Status.ClusterPlatformRef.Services == nil {
 				d.platform.Status.ClusterPlatformRef.Services = &operatorapi.PlatformServices{}
 			}
 			d.platform.Status.ClusterPlatformRef.Services.DataIndexRef = &operatorapi.PlatformServiceRef{
-				Url: psDI.ServiceBaseUrl(),
+				Url: psDI.GetLocalServiceBaseUrl(),
 			}
 		}
 	}
 }
 
-func (d DataIndex) ServiceSetInSpec() bool {
+func (d DataIndex) IsServiceSetInSpec() bool {
 	return isDataIndexSet(d.platform)
 }
 
-func (d DataIndex) ServiceEnabledInSpec() bool {
+func (d DataIndex) IsServiceEnabledInSpec() bool {
 	return isDataIndexEnabled(d.platform)
 }
 
-func (d DataIndex) serviceEnabledInStatus() bool {
+func (d DataIndex) isServiceEnabledInStatus() bool {
 	return d.platform != nil && d.platform.Status.ClusterPlatformRef != nil &&
 		d.platform.Status.ClusterPlatformRef.Services != nil && d.platform.Status.ClusterPlatformRef.Services.DataIndexRef != nil &&
-		!servicesSet(d.platform)
+		!isServicesSet(d.platform)
 }
 
-func (d DataIndex) ServiceEnabled() bool {
-	return d.ServiceEnabledInSpec() || d.serviceEnabledInStatus()
+func (d DataIndex) IsServiceEnabled() bool {
+	return d.IsServiceEnabledInSpec() || d.isServiceEnabledInStatus()
 }
 
 func (d DataIndex) GetServiceUrl() string {
@@ -150,16 +150,16 @@ func (d DataIndex) GetServiceUrl() string {
 }
 
 func (d DataIndex) GetServiceBaseUrl() string {
-	if d.ServiceEnabledInSpec() {
-		return d.ServiceBaseUrl()
+	if d.IsServiceEnabledInSpec() {
+		return d.GetLocalServiceBaseUrl()
 	}
-	if d.serviceEnabledInStatus() {
+	if d.isServiceEnabledInStatus() {
 		return d.platform.Status.ClusterPlatformRef.Services.DataIndexRef.Url
 	}
 	return ""
 }
 
-func (d DataIndex) ServiceBaseUrl() string {
+func (d DataIndex) GetLocalServiceBaseUrl() string {
 	return fmt.Sprintf("%s://%s.%s", constants.DataIndexServiceURLProtocol, d.GetServiceName(), d.platform.Namespace)
 }
 
@@ -293,7 +293,7 @@ func (d DataIndex) configurePostgreSqlEnv(postgresql *operatorapi.PersistencePos
 
 func (d DataIndex) GenerateWorkflowProperties() (*properties.Properties, error) {
 	props := properties.NewProperties()
-	if d.ServiceEnabled() {
+	if d.IsServiceEnabled() {
 		props.Set(constants.DataIndexServiceURLProperty, d.GetServiceUrl())
 	}
 	return props, nil
@@ -339,34 +339,34 @@ func (j JobService) GetServiceCmName() string {
 
 func (j JobService) SetServiceUrlInStatus(clusterRefPlatform *operatorapi.SonataFlowPlatform) {
 	psJS := NewJobService(clusterRefPlatform)
-	if !servicesSet(j.platform) && psJS.ServiceEnabledInSpec() {
+	if !isServicesSet(j.platform) && psJS.IsServiceEnabledInSpec() {
 		if j.platform.Status.ClusterPlatformRef != nil {
 			if j.platform.Status.ClusterPlatformRef.Services == nil {
 				j.platform.Status.ClusterPlatformRef.Services = &operatorapi.PlatformServices{}
 			}
 			j.platform.Status.ClusterPlatformRef.Services.JobServiceRef = &operatorapi.PlatformServiceRef{
-				Url: psJS.ServiceBaseUrl(),
+				Url: psJS.GetLocalServiceBaseUrl(),
 			}
 		}
 	}
 }
 
-func (j JobService) ServiceSetInSpec() bool {
+func (j JobService) IsServiceSetInSpec() bool {
 	return isJobServiceSet(j.platform)
 }
 
-func (j JobService) ServiceEnabledInSpec() bool {
+func (j JobService) IsServiceEnabledInSpec() bool {
 	return isJobServiceEnabled(j.platform)
 }
 
-func (j JobService) serviceEnabledInStatus() bool {
+func (j JobService) isServiceEnabledInStatus() bool {
 	return j.platform != nil && j.platform.Status.ClusterPlatformRef != nil &&
 		j.platform.Status.ClusterPlatformRef.Services != nil && j.platform.Status.ClusterPlatformRef.Services.JobServiceRef != nil &&
-		!servicesSet(j.platform)
+		!isServicesSet(j.platform)
 }
 
-func (j JobService) ServiceEnabled() bool {
-	return j.ServiceEnabledInSpec() || j.serviceEnabledInStatus()
+func (j JobService) IsServiceEnabled() bool {
+	return j.IsServiceEnabledInSpec() || j.isServiceEnabledInStatus()
 }
 
 func (j JobService) GetServiceUrl() string {
@@ -374,16 +374,16 @@ func (j JobService) GetServiceUrl() string {
 }
 
 func (j JobService) GetServiceBaseUrl() string {
-	if j.ServiceEnabledInSpec() {
-		return j.ServiceBaseUrl()
+	if j.IsServiceEnabledInSpec() {
+		return j.GetLocalServiceBaseUrl()
 	}
-	if j.serviceEnabledInStatus() {
+	if j.isServiceEnabledInStatus() {
 		return j.platform.Status.ClusterPlatformRef.Services.JobServiceRef.Url
 	}
 	return ""
 }
 
-func (j JobService) ServiceBaseUrl() string {
+func (j JobService) GetLocalServiceBaseUrl() string {
 	return fmt.Sprintf("%s://%s.%s", constants.JobServiceURLProtocol, j.GetServiceName(), j.platform.Namespace)
 }
 
@@ -510,7 +510,7 @@ func (j JobService) GenerateServiceProperties() (*properties.Properties, error) 
 	props.Set(constants.JobServiceKafkaSmallRyeHealthProperty, "false")
 	// add data source reactive URL
 	jspec := j.platform.Spec.Services.JobService
-	if j.ServiceSetInSpec() && jspec.Persistence != nil && jspec.Persistence.PostgreSql != nil {
+	if j.IsServiceSetInSpec() && jspec.Persistence != nil && jspec.Persistence.PostgreSql != nil {
 		dataSourceReactiveURL, err := generateReactiveURL(jspec.Persistence.PostgreSql, j.GetServiceName(), j.platform.Namespace, constants.DefaultDatabaseName, constants.DefaultPostgreSQLPort)
 		if err != nil {
 			return nil, err
@@ -518,7 +518,7 @@ func (j JobService) GenerateServiceProperties() (*properties.Properties, error) 
 		props.Set(constants.JobServiceDataSourceReactiveURL, dataSourceReactiveURL)
 	}
 	di := NewDataIndexService(j.platform)
-	if di.ServiceEnabled() {
+	if di.IsServiceEnabled() {
 		props.Set(constants.JobServiceStatusChangeEvents, "true")
 		props.Set(constants.JobServiceStatusChangeEventsURL, di.GetServiceBaseUrl()+"/jobs")
 	}
@@ -528,7 +528,7 @@ func (j JobService) GenerateServiceProperties() (*properties.Properties, error) 
 
 func (j JobService) GenerateWorkflowProperties() (*properties.Properties, error) {
 	props := properties.NewProperties()
-	if j.ServiceEnabled() {
+	if j.IsServiceEnabled() {
 		// add data source reactive URL
 		props.Set(constants.JobServiceRequestEventsURL, j.GetServiceUrl())
 	}
@@ -546,13 +546,13 @@ func isJobServiceEnabled(platform *operatorapi.SonataFlowPlatform) bool {
 }
 
 func isDataIndexSet(platform *operatorapi.SonataFlowPlatform) bool {
-	return servicesSet(platform) && platform.Spec.Services.DataIndex != nil
+	return isServicesSet(platform) && platform.Spec.Services.DataIndex != nil
 }
 
 func isJobServiceSet(platform *operatorapi.SonataFlowPlatform) bool {
-	return servicesSet(platform) && platform.Spec.Services.JobService != nil
+	return isServicesSet(platform) && platform.Spec.Services.JobService != nil
 }
 
-func servicesSet(platform *operatorapi.SonataFlowPlatform) bool {
+func isServicesSet(platform *operatorapi.SonataFlowPlatform) bool {
 	return platform != nil && platform.Spec.Services != nil
 }

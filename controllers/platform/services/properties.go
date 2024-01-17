@@ -160,7 +160,7 @@ func GenerateDataIndexWorkflowProperties(workflow *operatorapi.SonataFlow, platf
 	props := properties.NewProperties()
 	props.Set(constants.KogitoProcessInstancesEnabled, "false")
 	di := NewDataIndexService(platform)
-	if workflow != nil && !profiles.IsDevProfile(workflow) && di.ServiceEnabled() {
+	if workflow != nil && !profiles.IsDevProfile(workflow) && di.IsServiceEnabled() {
 		props.Set(constants.KogitoProcessInstancesEnabled, "true")
 		p, err := di.GenerateWorkflowProperties()
 		if err != nil {
@@ -182,7 +182,7 @@ func GenerateJobServiceWorkflowProperties(workflow *operatorapi.SonataFlow, plat
 	props.Set(constants.JobServiceRequestEventsConnector, constants.QuarkusHTTP)
 	props.Set(constants.JobServiceRequestEventsURL, fmt.Sprintf("%s://localhost/v2/jobs/events", constants.JobServiceURLProtocol))
 	js := NewJobService(platform)
-	if workflow != nil && !profiles.IsDevProfile(workflow) && js.ServiceEnabled() {
+	if workflow != nil && !profiles.IsDevProfile(workflow) && js.IsServiceEnabled() {
 		p, err := js.GenerateWorkflowProperties()
 		if err != nil {
 			return nil, err

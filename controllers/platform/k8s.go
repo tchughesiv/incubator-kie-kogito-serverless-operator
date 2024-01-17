@@ -63,14 +63,14 @@ func (action *serviceAction) Handle(ctx context.Context, platform *operatorapi.S
 
 	if platform.Spec.Services != nil {
 		psDI := services.NewDataIndexService(platform)
-		if psDI.ServiceSetInSpec() {
+		if psDI.IsServiceSetInSpec() {
 			if err := createServiceComponents(ctx, action.client, platform, psDI); err != nil {
 				return nil, err
 			}
 		}
 
 		psJS := services.NewJobService(platform)
-		if psJS.ServiceSetInSpec() {
+		if psJS.IsServiceSetInSpec() {
 			if err := createServiceComponents(ctx, action.client, platform, psJS); err != nil {
 				return nil, err
 			}

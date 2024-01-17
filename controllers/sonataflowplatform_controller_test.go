@@ -572,12 +572,12 @@ func TestSonataFlowPlatformController(t *testing.T) {
 
 		psDi := services.NewDataIndexService(ksp)
 		psDi2 := services.NewDataIndexService(ksp2)
-		assert.Equal(t, ksp2.Status.ClusterPlatformRef.Services.DataIndexRef.Url, psDi.ServiceBaseUrl())
-		assert.Equal(t, psDi.ServiceBaseUrl()+constants.DataIndexServiceURLPath, psDi2.GetServiceUrl())
+		assert.Equal(t, ksp2.Status.ClusterPlatformRef.Services.DataIndexRef.Url, psDi.GetLocalServiceBaseUrl())
+		assert.Equal(t, psDi.GetLocalServiceBaseUrl()+constants.DataIndexServiceURLPath, psDi2.GetServiceUrl())
 		psJs := services.NewJobService(ksp)
 		psJs2 := services.NewJobService(ksp2)
-		assert.Equal(t, ksp2.Status.ClusterPlatformRef.Services.JobServiceRef.Url, psJs.ServiceBaseUrl())
-		assert.Equal(t, psJs.ServiceBaseUrl()+constants.JobServiceURLPath, psJs2.GetServiceUrl())
+		assert.Equal(t, ksp2.Status.ClusterPlatformRef.Services.JobServiceRef.Url, psJs.GetLocalServiceBaseUrl())
+		assert.Equal(t, psJs.GetLocalServiceBaseUrl()+constants.JobServiceURLPath, psJs2.GetServiceUrl())
 
 		ksp2.Spec.Services = &v1alpha08.ServicesPlatformSpec{}
 
