@@ -118,9 +118,9 @@ func (d DataIndex) SetServiceUrlInStatus(clusterRefPlatform *operatorapi.SonataF
 	if !isServicesSet(d.platform) && psDI.IsServiceEnabledInSpec() {
 		if d.platform.Status.ClusterPlatformRef != nil {
 			if d.platform.Status.ClusterPlatformRef.Services == nil {
-				d.platform.Status.ClusterPlatformRef.Services = &operatorapi.PlatformServices{}
+				d.platform.Status.ClusterPlatformRef.Services = &operatorapi.PlatformServicesStatus{}
 			}
-			d.platform.Status.ClusterPlatformRef.Services.DataIndexRef = &operatorapi.PlatformServiceRef{
+			d.platform.Status.ClusterPlatformRef.Services.DataIndexRef = &operatorapi.PlatformServiceRefStatus{
 				Url: psDI.GetLocalServiceBaseUrl(),
 			}
 		}
@@ -342,9 +342,9 @@ func (j JobService) SetServiceUrlInStatus(clusterRefPlatform *operatorapi.Sonata
 	if !isServicesSet(j.platform) && psJS.IsServiceEnabledInSpec() {
 		if j.platform.Status.ClusterPlatformRef != nil {
 			if j.platform.Status.ClusterPlatformRef.Services == nil {
-				j.platform.Status.ClusterPlatformRef.Services = &operatorapi.PlatformServices{}
+				j.platform.Status.ClusterPlatformRef.Services = &operatorapi.PlatformServicesStatus{}
 			}
-			j.platform.Status.ClusterPlatformRef.Services.JobServiceRef = &operatorapi.PlatformServiceRef{
+			j.platform.Status.ClusterPlatformRef.Services.JobServiceRef = &operatorapi.PlatformServiceRefStatus{
 				Url: psJS.GetLocalServiceBaseUrl(),
 			}
 		}
@@ -517,10 +517,10 @@ func (j JobService) GenerateServiceProperties() (*properties.Properties, error) 
 		}
 		props.Set(constants.JobServiceDataSourceReactiveURL, dataSourceReactiveURL)
 	}
-	di := NewDataIndexService(j.platform)
-	if di.IsServiceEnabled() {
+	if isDataIndexEnabled(j.platform) {
+		di := NewDataIndexService(j.platform)
 		props.Set(constants.JobServiceStatusChangeEvents, "true")
-		props.Set(constants.JobServiceStatusChangeEventsURL, di.GetServiceBaseUrl()+"/jobs")
+		props.Set(constants.JobServiceStatusChangeEventsURL, di.GetLocalServiceBaseUrl()+"/jobs")
 	}
 	props.Sort()
 	return props, nil

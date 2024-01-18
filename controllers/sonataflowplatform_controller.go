@@ -195,7 +195,7 @@ func (r *SonataFlowPlatformReconciler) SonataFlowPlatformUpdateStatus(ctx contex
 			}
 		}
 
-		target.Status.ClusterPlatformRef = &operatorapi.SonataFlowClusterPlatformRef{
+		target.Status.ClusterPlatformRef = &operatorapi.SonataFlowClusterPlatformRefStatus{
 			Name: sfcPlatform.Name,
 			PlatformRef: operatorapi.SonataFlowPlatformRef{
 				Name:      platformRef.Name,

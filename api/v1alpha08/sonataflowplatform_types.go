@@ -80,32 +80,32 @@ type SonataFlowPlatformStatus struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=status,displayName="info"
 	Info map[string]string `json:"info,omitempty"`
 	// ClusterPlatformRef information related to the (optional) active SonataFlowClusterPlatform
-	ClusterPlatformRef *SonataFlowClusterPlatformRef `json:"clusterPlatformRef,omitempty"`
+	ClusterPlatformRef *SonataFlowClusterPlatformRefStatus `json:"clusterPlatformRef,omitempty"`
 }
 
-// SonataFlowClusterPlatformRef information related to the (optional) active SonataFlowClusterPlatform
+// SonataFlowClusterPlatformRefStatus information related to the (optional) active SonataFlowClusterPlatform
 // +k8s:openapi-gen=true
-type SonataFlowClusterPlatformRef struct {
+type SonataFlowClusterPlatformRefStatus struct {
 	// Name of the active SonataFlowClusterPlatform
 	Name string `json:"name,omitempty"`
 	// PlatformRef displays which SonataFlowPlatform has been referenced by the active SonataFlowClusterPlatform
 	PlatformRef SonataFlowPlatformRef `json:"platformRef,omitempty"`
 	// Services displays which cluster-wide services are being used by this SonataFlowPlatform
-	Services *PlatformServices `json:"services,omitempty"`
+	Services *PlatformServicesStatus `json:"services,omitempty"`
 }
 
-// PlatformServices displays which cluster-wide services are being used by a SonataFlowPlatform
+// PlatformServicesStatus displays which cluster-wide services are being used by a SonataFlowPlatform
 // +k8s:openapi-gen=true
-type PlatformServices struct {
+type PlatformServicesStatus struct {
 	// DataIndexRef displays information on the cluster-wide Data Index service
-	DataIndexRef *PlatformServiceRef `json:"dataIndexRef,omitempty"`
+	DataIndexRef *PlatformServiceRefStatus `json:"dataIndexRef,omitempty"`
 	// JobServiceRef displays information on the cluster-wide Job Service
-	JobServiceRef *PlatformServiceRef `json:"jobServiceRef,omitempty"`
+	JobServiceRef *PlatformServiceRefStatus `json:"jobServiceRef,omitempty"`
 }
 
-// PlatformServiceRef displays information on a cluster-wide service
+// PlatformServiceRefStatus displays information on a cluster-wide service
 // +k8s:openapi-gen=true
-type PlatformServiceRef struct {
+type PlatformServiceRefStatus struct {
 	// Url displays the base url of a cluster-wide service
 	Url string `json:"url,omitempty"`
 }

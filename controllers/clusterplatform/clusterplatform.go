@@ -25,6 +25,7 @@ import (
 	"github.com/apache/incubator-kie-kogito-serverless-operator/api/metadata"
 	operatorapi "github.com/apache/incubator-kie-kogito-serverless-operator/api/v1alpha08"
 	"github.com/apache/incubator-kie-kogito-serverless-operator/log"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -34,7 +35,7 @@ func GetActiveClusterPlatform(ctx context.Context, c ctrl.Client) (*operatorapi.
 	return getClusterPlatform(ctx, c, true)
 }
 
-// getClusterPlatform returns the currently installed cluster platform or any platform existing in the cluster.
+// getClusterPlatform returns the currently active cluster platform or any cluster platform existing in the cluster.
 func getClusterPlatform(ctx context.Context, c ctrl.Client, active bool) (*operatorapi.SonataFlowClusterPlatform, error) {
 	klog.V(log.D).InfoS("Finding available cluster platforms")
 
@@ -56,8 +57,8 @@ func getClusterPlatform(ctx context.Context, c ctrl.Client, active bool) (*opera
 		klog.V(log.D).InfoS("Found cluster platform", "platform", res.Name)
 		return &res, nil
 	}
-	klog.V(log.I).InfoS("Not found a cluster platform")
-	return nil, nil
+	klog.V(log.I).InfoS("No cluster platform found")
+	return nil, k8serrors.NewNotFound(operatorapi.Resource(operatorapi.SonataFlowClusterPlatformKind), "")
 }
 
 // listPrimaryClusterPlatforms returns all non-secondary cluster platforms installed (only one will be active).

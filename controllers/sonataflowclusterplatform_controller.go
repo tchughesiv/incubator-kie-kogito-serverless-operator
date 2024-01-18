@@ -134,7 +134,6 @@ func (r *SonataFlowClusterPlatformReconciler) SetupWithManager(mgr ctrlrun.Manag
 
 // if actively referenced sonataflowplatform object is changed, reconcile the active SonataFlowClusterPlatform.
 func (r *SonataFlowClusterPlatformReconciler) mapPlatformToClusterPlatformRequests(ctx context.Context, object client.Object) []reconcile.Request {
-	platform := object.(*operatorapi.SonataFlowPlatform)
 	sfcPlatform, err := clusterplatform.GetActiveClusterPlatform(ctx, r.Client)
 	if err != nil && !errors.IsNotFound(err) {
 		klog.V(log.E).ErrorS(err, "Failed to get active SonataFlowClusterPlatform")
@@ -143,7 +142,7 @@ func (r *SonataFlowClusterPlatformReconciler) mapPlatformToClusterPlatformReques
 
 	if sfcPlatform != nil {
 		sfpcRefNsName := types.NamespacedName{Namespace: sfcPlatform.Spec.PlatformRef.Namespace, Name: sfcPlatform.Spec.PlatformRef.Name}
-		if client.ObjectKeyFromObject(platform) == sfpcRefNsName {
+		if client.ObjectKeyFromObject(object) == sfpcRefNsName {
 			return []reconcile.Request{{NamespacedName: client.ObjectKeyFromObject(sfcPlatform)}}
 		}
 	}
@@ -163,10 +162,11 @@ func (r *SonataFlowClusterPlatformReconciler) mapClusterPlatformToClusterPlatfor
 			return nil
 		}
 
+		scpNamespacedName := client.ObjectKeyFromObject(sfcPlatform)
 		for _, cPlatform := range scpList.Items {
 			namespacedName := client.ObjectKeyFromObject(&cPlatform)
 			// this check is required so that the active clusterplatform object doesn't  reconcile
-			if client.ObjectKeyFromObject(sfcPlatform) != namespacedName {
+			if scpNamespacedName != namespacedName {
 				requests = append(requests, reconcile.Request{NamespacedName: namespacedName})
 			}
 		}
