@@ -64,14 +64,14 @@ func (action *serviceAction) Handle(ctx context.Context, platform *operatorapi.S
 	if platform.Spec.Services != nil {
 		psDI := services.NewDataIndexService(platform)
 		if psDI.IsServiceSetInSpec() {
-			if err := createServiceComponents(ctx, action.client, platform, psDI); err != nil {
+			if err := createOrUpdateServiceComponents(ctx, action.client, platform, psDI); err != nil {
 				return nil, err
 			}
 		}
 
 		psJS := services.NewJobService(platform)
 		if psJS.IsServiceSetInSpec() {
-			if err := createServiceComponents(ctx, action.client, platform, psJS); err != nil {
+			if err := createOrUpdateServiceComponents(ctx, action.client, platform, psJS); err != nil {
 				return nil, err
 			}
 		}
@@ -80,17 +80,17 @@ func (action *serviceAction) Handle(ctx context.Context, platform *operatorapi.S
 	return platform, nil
 }
 
-func createServiceComponents(ctx context.Context, client client.Client, platform *operatorapi.SonataFlowPlatform, ps services.Platform) error {
-	if err := createConfigMap(ctx, client, platform, ps); err != nil {
+func createOrUpdateServiceComponents(ctx context.Context, client client.Client, platform *operatorapi.SonataFlowPlatform, ps services.Platform) error {
+	if err := createOrUpdateConfigMap(ctx, client, platform, ps); err != nil {
 		return err
 	}
-	if err := createDeployment(ctx, client, platform, ps); err != nil {
+	if err := createOrUpdateDeployment(ctx, client, platform, ps); err != nil {
 		return err
 	}
-	return createService(ctx, client, platform, ps)
+	return createOrUpdateService(ctx, client, platform, ps)
 }
 
-func createDeployment(ctx context.Context, client client.Client, platform *operatorapi.SonataFlowPlatform, ps services.Platform) error {
+func createOrUpdateDeployment(ctx context.Context, client client.Client, platform *operatorapi.SonataFlowPlatform, ps services.Platform) error {
 	readyProbe := &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
@@ -195,7 +195,7 @@ func createDeployment(ctx context.Context, client client.Client, platform *opera
 	return nil
 }
 
-func createService(ctx context.Context, client client.Client, platform *operatorapi.SonataFlowPlatform, ps services.Platform) error {
+func createOrUpdateService(ctx context.Context, client client.Client, platform *operatorapi.SonataFlowPlatform, ps services.Platform) error {
 	lbl, selectorLbl := getLabels(platform, ps)
 	dataSvcSpec := corev1.ServiceSpec{
 		Ports: []corev1.ServicePort{
@@ -243,7 +243,7 @@ func getLabels(platform *operatorapi.SonataFlowPlatform, ps services.Platform) (
 	return lbl, selectorLbl
 }
 
-func createConfigMap(ctx context.Context, client client.Client, platform *operatorapi.SonataFlowPlatform, ps services.Platform) error {
+func createOrUpdateConfigMap(ctx context.Context, client client.Client, platform *operatorapi.SonataFlowPlatform, ps services.Platform) error {
 	handler, err := services.NewServiceAppPropertyHandler(ps)
 	if err != nil {
 		return err
